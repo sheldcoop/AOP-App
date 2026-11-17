@@ -34,7 +34,8 @@
       operation: "Replenishment",
       configVersion: "AP-3006-RP-1.0",
       sourceBasis: "MEC CZ-8401 + AP-3006 + Alkaline process documentation (replenisher mixture)",
-      // MEC reference dosing amount [L/m² processed area] (user-approved as fixed, configurable)
+      // MEC reference dosing amount [L/m² processed area]. Configurable; NOT yet confirmed
+      // as a universal operational constant (may be tool-specific).
       dosingLPerM2: 0.28,
       // Documented replenisher composition [vol %]
       composition: Object.freeze({ rPercent: 70.0, m2Percent: 22.5, diPercent: 7.5 }),

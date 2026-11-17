@@ -66,7 +66,7 @@
   var CFG = window.CHEMISTRY_CONFIG.AP3006_REPLENISHMENT;
   var D = CFG.display;
   var $ = function (id) { return document.getElementById(id); };
-  $("dosingHint").textContent = "Dosing basis: " + CFG.dosingLPerM2 + " L/m² (MEC reference dosing amount)";
+  $("dosingHint").textContent = "Dosing factor: " + CFG.dosingLPerM2 + " L/m² (MEC reference dosing amount under the guide's stated conditions — not yet confirmed as a fixed plant value)";
 
   function render() {
     var r = window.AP3006Replenishment.calculateReplenishment($("area").value, CFG);
@@ -383,7 +383,7 @@ function buildPendingPanel(id, title, reason, needed, known) {
       ["Make-Up", buildRecipePanel("p-ar-mu", C.ACID_RINSE_MAKEUP)],
       ["Replenishment", buildRecipePanel("p-ar-rp", C.ACID_RINSE_REPLENISHMENT)] ] },
     { label: "04 AP-3006", ops: [
-      ["Make-Up", "panel-makeup"], ["Replenishment", "panel-replen"], ["Bath Adjustment", "panel-ap-ba"] ] },
+      ["Make-Up", "panel-makeup"], ["Routine Replenishment", "panel-replen"], ["Bath Adjustment", "panel-ap-ba"] ] },
     { label: "05 Alkaline Post-treatment", ops: [
       ["Make-Up", buildPendingPanel("p-alk-mu", "Alkaline Post-treatment Make-Up", ALK_CONFLICT,
         ["Which NaOH and citric-acid stock concentrations are used in production."],

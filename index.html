@@ -54,7 +54,7 @@
 
 <div id="panel-makeup" role="tabpanel">
   <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Make-Up</h2>
-  <p class="sub">Fresh AP-3006 working-bath preparation: AP-3006M1, AP-3006M2 and DI Water.</p>
+  <p class="sub"><strong>New bath → AP-3006M1 + AP-3006M2 + DI Water.</strong> Used when preparing a new AP-3006 working bath. AP-3006R is not part of the fresh make-up recipe.</p>
 
   <section aria-labelledby="secA">
     <h2 id="secA">A. Required inputs</h2>
@@ -106,8 +106,8 @@
   </div>
 
   <div id="panel-replen" role="tabpanel" hidden>
-    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Replenishment</h2>
-    <p class="sub">Replenisher quantity from processed area: AP-3006R, AP-3006M2 and DI Water.</p>
+    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Routine Replenishment</h2>
+    <p class="sub"><strong>Production area → AP-3006R + AP-3006M2 + DI Water.</strong> Normal production replenishment using the documented replenisher mixture. AP-3006M1 is not used. This is not the M15 bath-adjustment calculation and does not use bath-analysis results.</p>
 
     <section aria-labelledby="rA">
       <h2 id="rA">A. Required input</h2>
@@ -138,6 +138,7 @@
           <ul style="margin:6px 0 0;padding-left:18px">
             <li>Whether processed area is one-side or two-side area.</li>
             <li>Mixing order, and whether the components are premixed or dosed separately.</li>
+            <li>Whether 0.28 L/m² (MEC reference amount, stated conditions) is fixed, configurable or tool-specific — not yet confirmed as an operational constant.</li>
           </ul>
         </div>
       </section>
@@ -151,6 +152,7 @@
 
   <div id="panel-ap-ba" role="tabpanel" hidden>
     <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Bath Adjustment</h2>
+    <p class="sub"><strong>Lab results → AP-3006M1 / M2 / R / DI Water as required.</strong> Starts from measured analysis results of the existing working bath. This is not routine replenishment and does not use processed area.</p>
     <div class="tabs" role="tablist" aria-label="Bath adjustment mode" style="margin-top:8px">
       <button role="tab" id="ba-mode-calc" aria-selected="true">Calculate additions</button>
       <button role="tab" id="ba-mode-check" aria-selected="false">Check additions (M15)</button>
@@ -159,7 +161,7 @@
     <div id="ba-calc-mode">
       <p class="sub">Enter the current bath and the Cu you want. The app calculates the additions using the workbook "Optional adjustment" methods: Cu goes to the target, and Effective Element is brought to 100 %.</p>
       <section aria-labelledby="bcA">
-        <h2 id="bcA">A. Current bath and target</h2>
+        <h2 id="bcA">A. Measured bath analysis and target</h2>
         <div class="grid2">
           <div>
             <label for="bc-currentVolume">Current Working Solution Volume [L]</label><input id="bc-currentVolume" inputmode="decimal" autocomplete="off">
@@ -209,7 +211,7 @@
     <p class="sub">Predicts the final condition of an existing AP-3006 bath after operator-entered additions (workbook sheet M15).</p>
     <div class="grid2">
       <section aria-labelledby="baA">
-        <h2 id="baA">A. Current bath</h2>
+        <h2 id="baA">A. Measured bath analysis</h2>
         <label for="ba-currentVolume">Current Working Solution Volume [L]</label><input id="ba-currentVolume" inputmode="decimal" autocomplete="off">
         <label for="ba-ee">Effective Element [%]</label><input id="ba-ee" inputmode="decimal" autocomplete="off">
         <label for="ba-acc">Accelerator [%]</label><input id="ba-acc" inputmode="decimal" autocomplete="off">

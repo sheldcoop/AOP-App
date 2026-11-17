@@ -18,12 +18,16 @@ Navigation: select a chemistry (01–05), then an operation (Make-Up / Replenish
 | 01 HCl Pretreatment | ✅ 90 % DI / 10 % 35% HCl | ✅ Area × 1.6 L/m², total only (MEC reference, not production-confirmed) | — |
 | 02 CZ-8401 | ✅ 100 % CZ-8401M | ✅ Area × 0.16 L/m² CZ-8401R (MEC reference, not production-confirmed) | ⏸ Pending: workbook formulas needed |
 | 03 Acid Rinse / HCl | ✅ 90 % DI / 10 % 35% HCl | ✅ Area × 5.2 L/m², total only (MEC reference, not production-confirmed) | — |
-| 04 AP-3006 | ✅ M1 50 %, M2 = Cu/240, DI balance | ✅ Area × 0.28 L/m²; R 70 / M2 22.5 / DI 7.5 | ✅ Calculate additions + M15 check |
+| 04 AP-3006 | ✅ M1 50 %, M2 = Cu/240, DI balance | ✅ Routine Replenishment: area × 0.28 L/m²; R 70 / M2 22.5 / DI 7.5 | ✅ Calculate additions + M15 check |
 | 05 Alkaline | ⏸ Stock-concentration conflict | ⏸ Same | ⏸ Same + workbook formulas needed |
 
 ## Confirmed decisions
 - AP-3006 Make-Up: operator enters the volume and target Cu, the tank is assumed empty, Cu outside 10–35 mg/L is hard-blocked, and the Cu field is pre-filled with 30 mg/L.
-- AP-3006 Replenishment: 0.28 L/m² is fixed but configurable. There is no maximum area and no link to bath analysis.
+- AP-3006 has three independent workflows (enforced by tests):
+  - **Make-Up**: new bath, M1 + M2 + DI. No AP-3006R.
+  - **Routine Replenishment**: production area, R + M2 + DI. No AP-3006M1, no bath analysis, not M15.
+  - **Bath Adjustment**: measured lab results (volume, EE, Accelerator, Cu), M1 / M2 / R / DI as required. No processed area.
+- Routine Replenishment: 0.28 L/m² is the MEC reference amount, configurable but not yet confirmed as a fixed or tool-independent plant value. There is no maximum area.
 - Full internal precision everywhere. Display: litres 0.1 L, percentages 2 dp.
 - No saving, printing, export, approvals or lot recording.
 
