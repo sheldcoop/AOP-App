@@ -29,22 +29,6 @@
       // Mixing order as specified by the supplier source
       mixOrder: Object.freeze(["DI Water", "AP-3006M1", "AP-3006M2"])
     }),
-    AP3006_REPLENISHMENT: Object.freeze({
-      chemistry: "AP-3006",
-      operation: "Replenishment",
-      configVersion: "AP-3006-RP-1.0",
-      sourceBasis: "MEC CZ-8401 + AP-3006 + Alkaline process documentation (replenisher mixture)",
-      // MEC reference dosing amount [L/m² processed area]. Configurable; NOT yet confirmed
-      // as a universal operational constant (may be tool-specific).
-      dosingLPerM2: 0.28,
-      // Documented replenisher composition [vol %]
-      composition: Object.freeze({ rPercent: 70.0, m2Percent: 22.5, diPercent: 7.5 }),
-      // Display precision (same as Make-Up)
-      display: Object.freeze({ volumeDecimals: 1, percentDecimals: 2 })
-      // Intentionally NOT defined: mixing order, premix vs separate dosing,
-      // one-side vs two-side area basis, maximum area, Cu/bath-analysis link.
-    }),
-
     /* ---------- 01 HCl Pretreatment ---------- */
     HCL_PRETREAT_MAKEUP: Object.freeze({
       chemistry: "HCl Pretreatment", operation: "Make-Up", configVersion: "HCL-PT-MU-1.0",
@@ -116,29 +100,42 @@
       ])
     }),
 
-    /* ---------- 04 AP-3006 Bath Adjustment / M15 ---------- */
+    /* ---------- 04 AP-3006 Bath Adjustment ---------- */
     AP3006_BATH_ADJUSTMENT: Object.freeze({
-      chemistry: "AP-3006", operation: "Bath Adjustment (M15)", configVersion: "AP-3006-M15-1.0",
-      sourceBasis: "Approved AP-3006/CZ-8401/Alkaline calculation workbook, sheet M15",
-      // Contribution of each added material (EE and Accelerator in %, Cu in mg/L)
-      materials: Object.freeze([
-        Object.freeze({ key: "m1", name: "AP-3006M1", ee: 200, acc: 200, cu: 0 }),
-        Object.freeze({ key: "m2", name: "AP-3006M2", ee: 0, acc: 0, cu: 240 }),
-        Object.freeze({ key: "r",  name: "AP-3006R",  ee: 200, acc: 165, cu: 0 }),
-        Object.freeze({ key: "di", name: "DI Water",  ee: 0, acc: 0, cu: 0 })
+      chemistry: "AP-3006", operation: "Bath Adjustment", configVersion: "AP-3006-BA-2.0",
+      sourceBasis: "Approved AP-3006/CZ-8401/Alkaline calculation workbook, sheet M15 (contribution constants, ranges, guidance); MEC process guide (make-up and replenisher recipes)",
+      // Workbook M15 contribution of each single chemical at 100 % (EE and Accelerator in %, Cu in mg/L)
+      chemicals: Object.freeze({
+        m1: Object.freeze({ name: "AP-3006M1", ee: 200, acc: 200, cu: 0 }),
+        m2: Object.freeze({ name: "AP-3006M2", ee: 0, acc: 0, cu: 240 }),
+        r:  Object.freeze({ name: "AP-3006R",  ee: 200, acc: 165, cu: 0 }),
+        di: Object.freeze({ name: "DI Water",  ee: 0, acc: 0, cu: 0 })
+      }),
+      // Solutions actually available at the machine (user-confirmed). AP-3006M1 is not
+      // available on its own. Composition in v/v % of each chemical.
+      solutions: Object.freeze([
+        Object.freeze({ key: "di", name: "DI Water", composition: Object.freeze({ di: 100 }) }),
+        // Lab premix made with the Make-Up recipe: M1 50 %, M2 = premix Cu / 240 × 100, DI balance.
+        // Its Cu is entered by the operator.
+        Object.freeze({ key: "mu", name: "Fresh make-up mix (lab premix)", premix: true, m1Percent: 50 }),
+        // MEC replenisher mixture
+        Object.freeze({ key: "rp", name: "Replenisher mix (R 70 / M2 22.5 / DI 7.5)",
+                        composition: Object.freeze({ r: 70, m2: 22.5, di: 7.5 }) })
       ]),
+      // The premix is made with the Make-Up recipe, whose documented Cu range is 10–35 mg/L
+      premixCuMinMgPerL: 10,
+      premixCuMaxMgPerL: 35,
+      defaultTargetCuMgPerL: 30,
       optimum: Object.freeze({
         ee:  Object.freeze({ target: 100, tol: 10, unit: "%" }),
         acc: Object.freeze({ target: 100, tol: 20, unit: "%" }),
         cu:  Object.freeze({ target: 30,  tol: 5,  unit: "mg/L" })
       }),
-      // Control limits from the workbook M15 sheet
       control: Object.freeze({
         ee:  Object.freeze({ min: 85, max: 115, unit: "%" }),
         acc: Object.freeze({ min: 75, max: 125, unit: "%" }),
         cu:  Object.freeze({ min: 10, max: 35,  unit: "mg/L" })
       }),
-      // Workbook guidance text shown when a value is outside the control limit
       guidance: Object.freeze({
         cu:  Object.freeze({ low: "Film formation performance goes down. Add AP-3006M2 to return to the center value or replace the whole working solution with fresh make-up solution.",
                              high: "Film formation performance goes up. Replace half or the whole working solution with fresh make-up solution." }),
@@ -148,13 +145,6 @@
                              high: "Film formation performance goes up. Replace half or the whole working solution with fresh make-up solution." })
       }),
       tankWarning: "If the working solution volume after adjustment exceeds the tank volume, reduce the working solution volume before adjustment and recalculate.",
-      // "Calculate additions" mode — workbook sheet "AP-3006 Optional adjustment"
-      optional: Object.freeze({
-        cu100PctMgPerL: 30,          // Cu conc. 100 % = 30 mg/L
-        targetEEPct: 100,            // workbook default targets
-        targetAccPct: 100,
-        defaultTargetCuMgPerL: 30
-      }),
       display: Object.freeze({ volumeDecimals: 1, valueDecimals: 2 })
     })
   });

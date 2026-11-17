@@ -105,138 +105,67 @@
   </div>
   </div>
 
-  <div id="panel-replen" role="tabpanel" hidden>
-    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Routine Replenishment</h2>
-    <p class="sub"><strong>Production area → AP-3006R + AP-3006M2 + DI Water.</strong> Normal production replenishment using the documented replenisher mixture. AP-3006M1 is not used. This is not the M15 bath-adjustment calculation and does not use bath-analysis results.</p>
-
-    <section aria-labelledby="rA">
-      <h2 id="rA">A. Required input</h2>
-      <label for="area">Processed Area [m²]</label>
-      <input id="area" inputmode="decimal" autocomplete="off">
-      <div class="hint" id="dosingHint"></div>
-      <div class="errors" id="rErrors" role="alert" hidden><ul id="rErrorList"></ul></div>
-    </section>
-
-    <div id="rResults" hidden>
-      <section aria-labelledby="rB">
-        <h2 id="rB">B. Calculated replenisher</h2>
-        <table>
-          <thead><tr><th>Component</th><th class="num">vol %</th><th class="num">Required volume [L]</th></tr></thead>
-          <tbody>
-            <tr><td>AP-3006R</td><td class="num" id="rRPct"></td><td class="num" id="rRL"></td></tr>
-            <tr><td>AP-3006M2</td><td class="num" id="rM2Pct"></td><td class="num" id="rM2L"></td></tr>
-            <tr><td>DI Water</td><td class="num" id="rDiPct"></td><td class="num" id="rDiL"></td></tr>
-            <tr class="total"><td>Total replenisher</td><td class="num" id="rTotPct"></td><td class="num" id="rTotL"></td></tr>
-          </tbody>
-        </table>
-        <p class="muted">Displayed values are rounded for display only; calculations use full precision.</p>
-      </section>
-
-      <section aria-labelledby="rC">
-        <h2 id="rC">C. Not yet defined</h2>
-        <div class="note">The source guide does not define the following, so the app gives no instruction for them:
-          <ul style="margin:6px 0 0;padding-left:18px">
-            <li>Whether processed area is one-side or two-side area.</li>
-            <li>Mixing order, and whether the components are premixed or dosed separately.</li>
-            <li>Whether 0.28 L/m² (MEC reference amount, stated conditions) is fixed, configurable or tool-specific — not yet confirmed as an operational constant.</li>
-          </ul>
-        </div>
-      </section>
-
-      <section aria-labelledby="rD">
-        <h2 id="rD">D. Calculation details</h2>
-        <details><summary>Show calculation</summary><pre id="rCalcDetails"></pre></details>
-      </section>
-    </div>
-  </div>
-
   <div id="panel-ap-ba" role="tabpanel" hidden>
     <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Bath Adjustment</h2>
-    <p class="sub"><strong>Lab results → AP-3006M1 / M2 / R / DI Water as required.</strong> Starts from measured analysis results of the existing working bath. This is not routine replenishment and does not use processed area.</p>
-    <div class="tabs" role="tablist" aria-label="Bath adjustment mode" style="margin-top:8px">
-      <button role="tab" id="ba-mode-calc" aria-selected="true">Calculate additions</button>
-      <button role="tab" id="ba-mode-check" aria-selected="false">Check additions (M15)</button>
+    <p class="sub"><strong>Lab results → DI Water / fresh make-up premix / replenisher mix.</strong> Starts from measured analysis of the existing working bath. Only solutions available at the machine are used; AP-3006M1 is not added on its own.</p>
+
+    <section aria-labelledby="baA">
+      <h2 id="baA">A. Measured bath analysis</h2>
+      <div class="grid2">
+        <div>
+          <label for="ba-currentVolume">Working Solution Volume [L]</label><input id="ba-currentVolume" inputmode="decimal" autocomplete="off">
+          <label for="ba-ee">Effective Element [%]</label><input id="ba-ee" inputmode="decimal" autocomplete="off">
+        </div>
+        <div>
+          <label for="ba-acc">Accelerator [%]</label><input id="ba-acc" inputmode="decimal" autocomplete="off">
+          <label for="ba-cu">Cu [mg/L]</label><input id="ba-cu" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+      <label for="ba-premixCu">Cu of the lab's fresh make-up premix [mg/L]</label><input id="ba-premixCu" inputmode="decimal" autocomplete="off">
+      <div class="hint" id="ba-premixHint"></div>
+    </section>
+
+    <div class="tabs" role="tablist" aria-label="Bath adjustment mode">
+      <button role="tab" id="ba-mode-target" aria-selected="true">Target Cu → how much to add</button>
+      <button role="tab" id="ba-mode-check" aria-selected="false">Check my additions</button>
     </div>
 
-    <div id="ba-calc-mode">
-      <p class="sub">Enter the current bath and the Cu you want. The app calculates the additions using the workbook "Optional adjustment" methods: Cu goes to the target, and Effective Element is brought to 100 %.</p>
-      <section aria-labelledby="bcA">
-        <h2 id="bcA">A. Measured bath analysis and target</h2>
-        <div class="grid2">
-          <div>
-            <label for="bc-currentVolume">Current Working Solution Volume [L]</label><input id="bc-currentVolume" inputmode="decimal" autocomplete="off">
-            <label for="bc-ee">Effective Element [%]</label><input id="bc-ee" inputmode="decimal" autocomplete="off">
-            <label for="bc-acc">Accelerator [%]</label><input id="bc-acc" inputmode="decimal" autocomplete="off">
-          </div>
-          <div>
-            <label for="bc-cu">Current Cu [mg/L]</label><input id="bc-cu" inputmode="decimal" autocomplete="off">
-            <label for="bc-targetCu">Target Cu [mg/L]</label><input id="bc-targetCu" inputmode="decimal" autocomplete="off">
-            <div class="hint" id="bc-targetHint"></div>
-            <label for="bc-method">Method</label>
-            <select id="bc-method" style="font-size:1rem;padding:8px;border:1px solid var(--border);border-radius:6px;max-width:100%"></select>
-          </div>
-        </div>
-        <div class="errors" id="bcErrors" role="alert" hidden><ul id="bcErrorList"></ul></div>
+    <div id="ba-target-mode">
+      <section>
+        <label for="ba-targetCu" style="margin-top:0">Target Cu [mg/L]</label><input id="ba-targetCu" inputmode="decimal" autocomplete="off">
+        <div class="hint" id="ba-targetHint"></div>
       </section>
-      <div id="bcResults" hidden>
-        <section aria-labelledby="bcB">
-          <h2 id="bcB">B. Additions required</h2>
-          <p id="bcMethodLine" style="margin:0 0 10px"></p>
-          <div id="bcBlocked" class="errors" hidden></div>
-          <div id="bcAddBlock">
-            <table>
-              <thead><tr><th>Add</th><th class="num">Volume [L]</th></tr></thead>
-              <tbody id="bcAddTable"></tbody>
-            </table>
-            <p class="note" style="margin-top:12px" id="bcTankWarn"></p>
-          </div>
+      <div class="errors" id="btErrors" role="alert" hidden><ul id="btErrorList"></ul></div>
+      <div id="btResults" hidden>
+        <section>
+          <h2>B. Options to reach the target Cu</h2>
+          <p id="btDirection" style="margin:0 0 10px"></p>
+          <div id="btOptions"></div>
+          <p class="note" id="btTankWarn" style="margin-top:12px"></p>
+          <p class="muted">Each option uses one solution on its own. Displayed values are rounded for display only.</p>
         </section>
-        <section aria-labelledby="bcC" id="bcPredSection">
-          <h2 id="bcC">C. Predicted bath after additions</h2>
-          <div class="table-wrap"><table>
-            <thead><tr><th>Parameter</th><th class="num">Before</th><th class="num">After</th><th class="num">Optimum</th><th>Status</th></tr></thead>
-            <tbody id="bcPredTable"></tbody>
-          </table></div>
-          <div id="bcGuidance"></div>
-          <p class="muted">The workbook gives Cu priority, so the final Effective Element and Accelerator land slightly off 100 %. Displayed values are rounded for display only.</p>
-        </section>
-        <section aria-labelledby="bcD">
-          <h2 id="bcD">D. Calculation details</h2>
-          <details><summary>Show calculation</summary><pre id="bcCalcDetails"></pre></details>
-        </section>
+        <section><h2>C. Calculation details</h2><details><summary>Show calculation</summary><pre id="btCalc"></pre></details></section>
       </div>
     </div>
 
     <div id="ba-check-mode" hidden>
-    <p class="sub">Predicts the final condition of an existing AP-3006 bath after operator-entered additions (workbook sheet M15).</p>
-    <div class="grid2">
-      <section aria-labelledby="baA">
-        <h2 id="baA">A. Measured bath analysis</h2>
-        <label for="ba-currentVolume">Current Working Solution Volume [L]</label><input id="ba-currentVolume" inputmode="decimal" autocomplete="off">
-        <label for="ba-ee">Effective Element [%]</label><input id="ba-ee" inputmode="decimal" autocomplete="off">
-        <label for="ba-acc">Accelerator [%]</label><input id="ba-acc" inputmode="decimal" autocomplete="off">
-        <label for="ba-cu">Cu [mg/L]</label><input id="ba-cu" inputmode="decimal" autocomplete="off">
+      <section>
+        <h2>B. Additions [L]</h2>
+        <div class="grid2" id="ba-additions"></div>
       </section>
-      <section aria-labelledby="baB">
-        <h2 id="baB">B. Additions [L]</h2>
-        <div id="ba-additions"></div>
-      </section>
-    </div>
-    <div class="errors" id="baErrors" role="alert" hidden><ul id="baErrorList"></ul></div>
-    <div id="baResults" hidden>
-      <section aria-labelledby="baC">
-        <h2 id="baC">C. Before / Addition / After / Target</h2>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Parameter</th><th class="num">Before</th><th class="num">Change</th><th class="num">After</th><th class="num">Optimum</th><th>Status</th></tr></thead>
-          <tbody id="baTable"></tbody>
-        </table></div>
-        <div id="baGuidance"></div><p class="note" id="baTankWarn" style="margin-top:12px"></p><p class="muted">Optimum ranges and control limits from the approved workbook. Displayed values are rounded for display only.</p>
-      </section>
-      <section aria-labelledby="baD">
-        <h2 id="baD">D. Calculation details</h2>
-        <details><summary>Show calculation</summary><pre id="baCalcDetails"></pre></details>
-      </section>
-    </div>
+      <div class="errors" id="baErrors" role="alert" hidden><ul id="baErrorList"></ul></div>
+      <div id="baResults" hidden>
+        <section>
+          <h2>C. Before / Addition / After / Target</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Parameter</th><th class="num">Before</th><th class="num">Change</th><th class="num">After</th><th class="num">Optimum</th><th>Status</th></tr></thead>
+            <tbody id="baTable"></tbody>
+          </table></div>
+          <div id="baGuidance"></div>
+          <p class="note" id="baTankWarn" style="margin-top:12px"></p>
+        </section>
+        <section><h2>D. Calculation details</h2><details><summary>Show calculation</summary><pre id="baCalc"></pre></details></section>
+      </div>
     </div>
   </div>
 
@@ -246,7 +175,6 @@
 <script src="js/common.js"></script>
 <script src="js/chemistry-config.js"></script>
 <script src="js/ap3006-makeup.js"></script>
-<script src="js/ap3006-replenishment.js"></script>
 <script src="js/ap3006-bath-adjustment.js"></script>
 <script src="js/recipe-calc.js"></script>
 <script src="js/app.js"></script>
