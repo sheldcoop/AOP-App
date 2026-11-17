@@ -18,3 +18,10 @@ Open `index.html` in a browser (no install needed). Run tests with `npm test` (N
 - Tank capacity, standard fill volume, number of AP-3006 tanks/tools.
 - Minimum practical dosing increment. Once it is confirmed, add a rounded executable recipe beside the
   theoretical one, with predicted Cu recalculated from the rounded (actually dosed) volumes.
+
+## AP-3006 Replenishment module (separate tab)
+- `js/ap3006-replenishment.js`: its own calculation logic, independent of Make-Up. Constants are in `AP3006_REPLENISHMENT` in `js/chemistry-config.js`.
+- Total replenisher [L] = Processed Area [m²] × 0.28 L/m² (MEC reference dosing amount; fixed, configurable).
+- Composition: AP-3006R 70.0 vol %, AP-3006M2 22.5 vol %, DI Water 7.5 vol %. Example: 1,000 m² → 280 L = 196 L R + 63 L M2 + 21 L DI.
+- No maximum-area limit and no link to Cu/bath analysis.
+- Not defined yet, so no instruction is given: one-side vs two-side area; mixing order; premixed vs dosed separately.

@@ -28,6 +28,20 @@
       display: Object.freeze({ volumeDecimals: 1, percentDecimals: 2, cuDecimals: 2 }),
       // Mixing order as specified by the supplier source
       mixOrder: Object.freeze(["DI Water", "AP-3006M1", "AP-3006M2"])
+    }),
+    AP3006_REPLENISHMENT: Object.freeze({
+      chemistry: "AP-3006",
+      operation: "Replenishment",
+      configVersion: "AP-3006-RP-1.0",
+      sourceBasis: "MEC CZ-8401 + AP-3006 + Alkaline process documentation (replenisher mixture)",
+      // MEC reference dosing amount [L/m² processed area] (user-approved as fixed, configurable)
+      dosingLPerM2: 0.28,
+      // Documented replenisher composition [vol %]
+      composition: Object.freeze({ rPercent: 70.0, m2Percent: 22.5, diPercent: 7.5 }),
+      // Display precision (same as Make-Up)
+      display: Object.freeze({ volumeDecimals: 1, percentDecimals: 2 })
+      // Intentionally NOT defined: mixing order, premix vs separate dosing,
+      // one-side vs two-side area basis, maximum area, Cu/bath-analysis link.
     })
   });
 

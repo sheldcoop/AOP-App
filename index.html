@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AP-3006 Make-Up</title>
+<title>AP-3006 Calculator</title>
 <style>
   :root { --bg:#f6f7f9; --card:#fff; --text:#1d2433; --muted:#5b6578; --border:#d9dee7; --accent:#1f5fbf; --err:#b42318; --errbg:#fdecea; --ok:#067647; }
   * { box-sizing: border-box; }
@@ -30,12 +30,23 @@
   pre { background:#f1f3f7; padding:10px; border-radius:6px; overflow-x:auto; font-size:.9rem; }
   details summary { cursor:pointer; font-weight:600; }
   .muted { color: var(--muted); font-size:.85rem; }
+  .tabs { display:flex; gap:4px; border-bottom:2px solid var(--border); margin-bottom:16px; }
+  .tabs button { font:inherit; font-weight:600; padding:10px 16px; border:none; background:none; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  .tabs button[aria-selected="true"] { color:var(--accent); border-bottom-color:var(--accent); }
+  .note { background:#fff8e6; border:1px solid #f3d27a; border-radius:8px; padding:10px 14px; font-size:.9rem; }
   [hidden] { display:none !important; }
 </style>
 </head>
 <body>
 <main>
-  <h1>AP-3006 Make-Up</h1>
+  <h1>AP-3006</h1>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-makeup" aria-controls="panel-makeup" aria-selected="true">Make-Up</button>
+    <button role="tab" id="tab-replen" aria-controls="panel-replen" aria-selected="false">Replenishment</button>
+  </div>
+
+  <div id="panel-makeup" role="tabpanel" aria-labelledby="tab-makeup">
+  <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Make-Up</h2>
   <p class="sub">Fresh AP-3006 working-bath preparation: AP-3006M1, AP-3006M2 and DI Water.</p>
 
   <section aria-labelledby="secA">
@@ -85,10 +96,56 @@
       </details>
     </section>
   </div>
+  </div>
+
+  <div id="panel-replen" role="tabpanel" aria-labelledby="tab-replen" hidden>
+    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Replenishment</h2>
+    <p class="sub">Replenisher quantity from processed area: AP-3006R, AP-3006M2 and DI Water.</p>
+
+    <section aria-labelledby="rA">
+      <h2 id="rA">A. Required input</h2>
+      <label for="area">Processed Area [m²]</label>
+      <input id="area" inputmode="decimal" autocomplete="off">
+      <div class="hint" id="dosingHint"></div>
+      <div class="errors" id="rErrors" role="alert" hidden><ul id="rErrorList"></ul></div>
+    </section>
+
+    <div id="rResults" hidden>
+      <section aria-labelledby="rB">
+        <h2 id="rB">B. Calculated replenisher</h2>
+        <table>
+          <thead><tr><th>Component</th><th class="num">vol %</th><th class="num">Required volume [L]</th></tr></thead>
+          <tbody>
+            <tr><td>AP-3006R</td><td class="num" id="rRPct"></td><td class="num" id="rRL"></td></tr>
+            <tr><td>AP-3006M2</td><td class="num" id="rM2Pct"></td><td class="num" id="rM2L"></td></tr>
+            <tr><td>DI Water</td><td class="num" id="rDiPct"></td><td class="num" id="rDiL"></td></tr>
+            <tr class="total"><td>Total replenisher</td><td class="num" id="rTotPct"></td><td class="num" id="rTotL"></td></tr>
+          </tbody>
+        </table>
+        <p class="muted">Displayed values are rounded for display only; calculations use full precision.</p>
+      </section>
+
+      <section aria-labelledby="rC">
+        <h2 id="rC">C. Not yet defined</h2>
+        <div class="note">The source guide does not define the following, so the app gives no instruction for them:
+          <ul style="margin:6px 0 0;padding-left:18px">
+            <li>Whether processed area is one-side or two-side area.</li>
+            <li>Mixing order, and whether the components are premixed or dosed separately.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="rD">
+        <h2 id="rD">D. Calculation details</h2>
+        <details><summary>Show calculation</summary><pre id="rCalcDetails"></pre></details>
+      </section>
+    </div>
+  </div>
 </main>
 
 <script src="js/chemistry-config.js"></script>
 <script src="js/ap3006-makeup.js"></script>
+<script src="js/ap3006-replenishment.js"></script>
 <script>
 (function () {
   var CFG = window.CHEMISTRY_CONFIG.AP3006_MAKEUP;
@@ -148,6 +205,67 @@
 
   $("volume").addEventListener("input", render);
   $("cu").addEventListener("input", render);
+  render();
+})();
+
+// Tabs (shared UI only)
+(function () {
+  var tabs = [["tab-makeup","panel-makeup"],["tab-replen","panel-replen"]];
+  tabs.forEach(function (t) {
+    document.getElementById(t[0]).addEventListener("click", function () {
+      tabs.forEach(function (u) {
+        var on = u[0] === t[0];
+        document.getElementById(u[0]).setAttribute("aria-selected", on);
+        document.getElementById(u[1]).hidden = !on;
+      });
+    });
+  });
+})();
+
+// Replenishment UI (independent calculation module)
+(function () {
+  var CFG = window.CHEMISTRY_CONFIG.AP3006_REPLENISHMENT;
+  var D = CFG.display;
+  var $ = function (id) { return document.getElementById(id); };
+  $("dosingHint").textContent = "Dosing basis: " + CFG.dosingLPerM2 + " L/m² (MEC reference dosing amount)";
+
+  function render() {
+    var r = window.AP3006Replenishment.calculateReplenishment($("area").value, CFG);
+    $("area").removeAttribute("aria-invalid");
+    if (!r.ok) {
+      $("rResults").hidden = true;
+      var list = $("rErrorList"); list.innerHTML = "";
+      r.errors.forEach(function (e) {
+        var li = document.createElement("li"); li.textContent = e.message; list.appendChild(li);
+        if (e.field === "area") $("area").setAttribute("aria-invalid", "true");
+      });
+      $("rErrors").hidden = false;
+      return;
+    }
+    $("rErrors").hidden = true;
+    $("rResults").hidden = false;
+    var p = D.percentDecimals, v = D.volumeDecimals;
+    $("rRPct").textContent = r.percent.r.toFixed(p) + " %";
+    $("rM2Pct").textContent = r.percent.m2.toFixed(p) + " %";
+    $("rDiPct").textContent = r.percent.di.toFixed(p) + " %";
+    $("rTotPct").textContent = (r.percent.r + r.percent.m2 + r.percent.di).toFixed(p) + " %";
+    $("rRL").textContent = r.litres.r.toFixed(v);
+    $("rM2L").textContent = r.litres.m2.toFixed(v);
+    $("rDiL").textContent = r.litres.di.toFixed(v);
+    $("rTotL").textContent = r.totalL.toFixed(v);
+    var A = r.inputs.processedAreaM2, k = r.dosingLPerM2;
+    $("rCalcDetails").textContent = [
+      "Constants (" + r.configVersion + "): dosing = " + k + " L/m²; AP-3006R " + r.percent.r + " %, AP-3006M2 " + r.percent.m2 + " %, DI " + r.percent.di + " %",
+      "",
+      "Total L     = Processed Area × " + k + " = " + A + " × " + k + " = " + r.totalL.toFixed(6),
+      "AP-3006R L  = Total × " + r.percent.r + " / 100 = " + r.litres.r.toFixed(6),
+      "AP-3006M2 L = Total × " + r.percent.m2 + " / 100 = " + r.litres.m2.toFixed(6),
+      "DI Water L  = Total × " + r.percent.di + " / 100 = " + r.litres.di.toFixed(6),
+      "",
+      "Balance: R + M2 + DI = " + (r.litres.r + r.litres.m2 + r.litres.di).toFixed(6) + " L"
+    ].join("\n");
+  }
+  $("area").addEventListener("input", render);
   render();
 })();
 </script>
