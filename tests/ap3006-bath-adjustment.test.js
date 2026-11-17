@@ -48,3 +48,74 @@ test("Validation", () => {
   assert.equal(run(base, { ...z, r: -1 }).errors[0].code, "negative");
   assert.equal(run({ ...base, currentVolume: 0 }, z).errors[0].code, "not_positive");
 });
+
+const { calculateAdditions } = require("../js/ap3006-bath-adjustment.js");
+const sample = { currentVolume: 274, ee: 90.8, acc: 78.2, cu: 27.64, targetCu: 30 };
+
+test("Calculate additions — workbook sample bath, method a (auto)", () => {
+  const r = calculateAdditions(sample, CFG);
+  assert.equal(r.autoMethod, "a"); assert.equal(r.feasible, true);
+  close(r.additions.m1, 274 * (100 - 90.8) / (200 - 100), "M1");
+  const cuPct = 27.64 / 30 * 100, c48 = cuPct * 274 / (274 + r.additions.m1);
+  close(r.additions.m2, (274 + r.additions.m1) * (100 - c48) / (800 - 100), "M2");
+  close(r.additions.m1, 25.208, "M1 value");
+  assert.ok(Math.abs(r.additions.m2 - 6.680381) < 1e-6);
+  close(r.prediction.params.cu.after, 30, "Cu hits target");
+  assert.ok(Math.abs(r.prediction.params.ee.after - 97.816072) < 1e-6);
+  assert.ok(Math.abs(r.prediction.params.acc.after - 86.529602) < 1e-6);
+});
+
+test("Method b — EE high, Cu low: DI + M2, EE to 100 and Cu to target", () => {
+  const r = calculateAdditions({ currentVolume: 200, ee: 110, acc: 105, cu: 27, targetCu: 30 }, CFG);
+  assert.equal(r.method, "b");
+  close(r.additions.di, 200 * (110 - 100) / 100, "DI");
+  close(r.prediction.params.cu.after, 30, "Cu");
+  assert.equal(r.additions.m1, 0);
+});
+
+test("Method c — Cu high, EE low: M1 + DI, EE to 100 before DI and Cu to target", () => {
+  const r = calculateAdditions({ currentVolume: 300, ee: 90, acc: 95, cu: 40, targetCu: 30 }, CFG);
+  assert.equal(r.method, "c"); assert.equal(r.feasible, true);
+  close(r.additions.m1, 300 * 10 / (200 - 100), "M1");
+  close(r.prediction.params.cu.after, 30, "Cu");
+  assert.equal(r.additions.m2, 0);
+});
+
+test("Workbook priority formula uses EE (user-approved)", () => {
+  // Acc lower than EE: M1 still calculated from EE
+  const r = calculateAdditions(sample, CFG);
+  assert.equal(r.priorityTargetPct, 100);
+  close(r.additions.m1, 274 * 9.2 / 100, "M1 from EE");
+});
+
+test("Negative addition → cannot be adjusted with that method", () => {
+  const r = calculateAdditions({ currentVolume: 100, ee: 110, acc: 100, cu: 40, targetCu: 30 }, CFG, "a");
+  assert.equal(r.feasible, false);
+  assert.match(r.message, /cannot be adjusted/);
+});
+
+test("No applicable method is reported", () => {
+  const r = calculateAdditions({ currentVolume: 100, ee: 100, acc: 100, cu: 30, targetCu: 30 }, CFG);
+  assert.equal(r.applicable, false);
+});
+
+test("Manual override and validation", () => {
+  assert.equal(calculateAdditions(sample, CFG, "b").method, "b");
+  assert.equal(calculateAdditions({ ...sample, targetCu: "" }, CFG).errors[0].code, "missing");
+  assert.equal(calculateAdditions({ ...sample, targetCu: 240 }, CFG).errors[0].code, "out_of_math_range");
+  assert.equal(calculateAdditions({ ...sample, currentVolume: 0 }, CFG).errors[0].code, "not_positive");
+});
+
+test("M2 Cu on workbook % scale is 800 %", () => {
+  assert.equal(240 / CFG.optional.cu100PctMgPerL * 100, 800);
+});
+
+test("Status uses optimum and control limits", () => {
+  const { classify } = require("../js/ap3006-bath-adjustment.js");
+  assert.equal(classify("cu", 30, CFG).level, "optimum");
+  assert.equal(classify("cu", 20, CFG).level, "control");
+  assert.equal(classify("cu", 9, CFG).level, "out");
+  assert.match(classify("cu", 9, CFG).guidance, /Add AP-3006M2/);
+  assert.equal(classify("ee", 112, CFG).level, "control");
+  assert.equal(classify("acc", 126, CFG).label, "Above control limit");
+});

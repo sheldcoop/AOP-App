@@ -131,6 +131,29 @@
         acc: Object.freeze({ target: 100, tol: 20, unit: "%" }),
         cu:  Object.freeze({ target: 30,  tol: 5,  unit: "mg/L" })
       }),
+      // Control limits from the workbook M15 sheet
+      control: Object.freeze({
+        ee:  Object.freeze({ min: 85, max: 115, unit: "%" }),
+        acc: Object.freeze({ min: 75, max: 125, unit: "%" }),
+        cu:  Object.freeze({ min: 10, max: 35,  unit: "mg/L" })
+      }),
+      // Workbook guidance text shown when a value is outside the control limit
+      guidance: Object.freeze({
+        cu:  Object.freeze({ low: "Film formation performance goes down. Add AP-3006M2 to return to the center value or replace the whole working solution with fresh make-up solution.",
+                             high: "Film formation performance goes up. Replace half or the whole working solution with fresh make-up solution." }),
+        ee:  Object.freeze({ low: "Film formation performance goes up. Add AP-3006M1 to return to the center value or replace the whole working solution with fresh make-up solution.",
+                             high: "Film formation performance goes down. Replace half or the whole working solution with fresh make-up solution." }),
+        acc: Object.freeze({ low: "Film formation performance goes down. Add AP-3006M1 to return to the center value or replace the whole working solution with fresh make-up solution.",
+                             high: "Film formation performance goes up. Replace half or the whole working solution with fresh make-up solution." })
+      }),
+      tankWarning: "If the working solution volume after adjustment exceeds the tank volume, reduce the working solution volume before adjustment and recalculate.",
+      // "Calculate additions" mode — workbook sheet "AP-3006 Optional adjustment"
+      optional: Object.freeze({
+        cu100PctMgPerL: 30,          // Cu conc. 100 % = 30 mg/L
+        targetEEPct: 100,            // workbook default targets
+        targetAccPct: 100,
+        defaultTargetCuMgPerL: 30
+      }),
       display: Object.freeze({ volumeDecimals: 1, valueDecimals: 2 })
     })
   });

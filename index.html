@@ -150,8 +150,63 @@
   </div>
 
   <div id="panel-ap-ba" role="tabpanel" hidden>
-    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Bath Adjustment (M15)</h2>
-    <p class="sub">Predicts the final condition of an existing AP-3006 bath after operator-entered additions. Prediction only — the app does not recommend addition amounts.</p>
+    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Bath Adjustment</h2>
+    <div class="tabs" role="tablist" aria-label="Bath adjustment mode" style="margin-top:8px">
+      <button role="tab" id="ba-mode-calc" aria-selected="true">Calculate additions</button>
+      <button role="tab" id="ba-mode-check" aria-selected="false">Check additions (M15)</button>
+    </div>
+
+    <div id="ba-calc-mode">
+      <p class="sub">Enter the current bath and the Cu you want. The app calculates the additions using the workbook "Optional adjustment" methods: Cu goes to the target, and Effective Element is brought to 100 %.</p>
+      <section aria-labelledby="bcA">
+        <h2 id="bcA">A. Current bath and target</h2>
+        <div class="grid2">
+          <div>
+            <label for="bc-currentVolume">Current Working Solution Volume [L]</label><input id="bc-currentVolume" inputmode="decimal" autocomplete="off">
+            <label for="bc-ee">Effective Element [%]</label><input id="bc-ee" inputmode="decimal" autocomplete="off">
+            <label for="bc-acc">Accelerator [%]</label><input id="bc-acc" inputmode="decimal" autocomplete="off">
+          </div>
+          <div>
+            <label for="bc-cu">Current Cu [mg/L]</label><input id="bc-cu" inputmode="decimal" autocomplete="off">
+            <label for="bc-targetCu">Target Cu [mg/L]</label><input id="bc-targetCu" inputmode="decimal" autocomplete="off">
+            <div class="hint" id="bc-targetHint"></div>
+            <label for="bc-method">Method</label>
+            <select id="bc-method" style="font-size:1rem;padding:8px;border:1px solid var(--border);border-radius:6px;max-width:100%"></select>
+          </div>
+        </div>
+        <div class="errors" id="bcErrors" role="alert" hidden><ul id="bcErrorList"></ul></div>
+      </section>
+      <div id="bcResults" hidden>
+        <section aria-labelledby="bcB">
+          <h2 id="bcB">B. Additions required</h2>
+          <p id="bcMethodLine" style="margin:0 0 10px"></p>
+          <div id="bcBlocked" class="errors" hidden></div>
+          <div id="bcAddBlock">
+            <table>
+              <thead><tr><th>Add</th><th class="num">Volume [L]</th></tr></thead>
+              <tbody id="bcAddTable"></tbody>
+            </table>
+            <p class="note" style="margin-top:12px" id="bcTankWarn"></p>
+          </div>
+        </section>
+        <section aria-labelledby="bcC" id="bcPredSection">
+          <h2 id="bcC">C. Predicted bath after additions</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Parameter</th><th class="num">Before</th><th class="num">After</th><th class="num">Optimum</th><th>Status</th></tr></thead>
+            <tbody id="bcPredTable"></tbody>
+          </table></div>
+          <div id="bcGuidance"></div>
+          <p class="muted">The workbook gives Cu priority, so the final Effective Element and Accelerator land slightly off 100 %. Displayed values are rounded for display only.</p>
+        </section>
+        <section aria-labelledby="bcD">
+          <h2 id="bcD">D. Calculation details</h2>
+          <details><summary>Show calculation</summary><pre id="bcCalcDetails"></pre></details>
+        </section>
+      </div>
+    </div>
+
+    <div id="ba-check-mode" hidden>
+    <p class="sub">Predicts the final condition of an existing AP-3006 bath after operator-entered additions (workbook sheet M15).</p>
     <div class="grid2">
       <section aria-labelledby="baA">
         <h2 id="baA">A. Current bath</h2>
@@ -173,12 +228,13 @@
           <thead><tr><th>Parameter</th><th class="num">Before</th><th class="num">Change</th><th class="num">After</th><th class="num">Optimum</th><th>Status</th></tr></thead>
           <tbody id="baTable"></tbody>
         </table></div>
-        <p class="muted">Optimum ranges from the approved workbook. Displayed values are rounded for display only.</p>
+        <div id="baGuidance"></div><p class="note" id="baTankWarn" style="margin-top:12px"></p><p class="muted">Optimum ranges and control limits from the approved workbook. Displayed values are rounded for display only.</p>
       </section>
       <section aria-labelledby="baD">
         <h2 id="baD">D. Calculation details</h2>
         <details><summary>Show calculation</summary><pre id="baCalcDetails"></pre></details>
       </section>
+    </div>
     </div>
   </div>
 
