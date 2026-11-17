@@ -42,6 +42,96 @@
       display: Object.freeze({ volumeDecimals: 1, percentDecimals: 2 })
       // Intentionally NOT defined: mixing order, premix vs separate dosing,
       // one-side vs two-side area basis, maximum area, Cu/bath-analysis link.
+    }),
+
+    /* ---------- 01 HCl Pretreatment ---------- */
+    HCL_PRETREAT_MAKEUP: Object.freeze({
+      chemistry: "HCl Pretreatment", operation: "Make-Up", configVersion: "HCL-PT-MU-1.0",
+      sourceBasis: "MEC CZ-8401 + AP-3006 + Alkaline process guide",
+      basis: "volume",
+      components: Object.freeze([
+        Object.freeze({ name: "DI Water", percent: 90 }),
+        Object.freeze({ name: "35% HCl", percent: 10 })
+      ]),
+      info: Object.freeze(["Documented nominal final acid concentration: approximately 1.2 mol/L."]),
+      notDefined: Object.freeze(["Mixing order (not given in the source)."])
+    }),
+    HCL_PRETREAT_REPLENISHMENT: Object.freeze({
+      chemistry: "HCl Pretreatment", operation: "Replenishment", configVersion: "HCL-PT-RP-1.0",
+      sourceBasis: "MEC process guide reference dosing (stated reference conditions)",
+      basis: "area", dosingLPerM2: 1.6,
+      components: Object.freeze([]),
+      info: Object.freeze([]),
+      notDefined: Object.freeze([
+        "Whether 1.6 L/m² (MEC reference) is fixed, configurable or tool-specific — not confirmed for production.",
+        "Processed-area definition; one-side vs two-side area.",
+        "Replenisher composition and how replenishment is physically dosed."
+      ])
+    }),
+
+    /* ---------- 02 CZ-8401 ---------- */
+    CZ8401_MAKEUP: Object.freeze({
+      chemistry: "CZ-8401", operation: "Make-Up", configVersion: "CZ-MU-1.0",
+      sourceBasis: "MEC CZ-8401 + AP-3006 + Alkaline process guide",
+      basis: "volume",
+      components: Object.freeze([Object.freeze({ name: "CZ-8401M", percent: 100 })]),
+      info: Object.freeze([]),
+      notDefined: Object.freeze([])
+    }),
+    CZ8401_REPLENISHMENT: Object.freeze({
+      chemistry: "CZ-8401", operation: "Replenishment", configVersion: "CZ-RP-1.0",
+      sourceBasis: "MEC process guide reference dosing",
+      basis: "area", dosingLPerM2: 0.16,
+      components: Object.freeze([Object.freeze({ name: "CZ-8401R", percent: 100 })]),
+      info: Object.freeze([]),
+      notDefined: Object.freeze([
+        "Whether 0.16 L/m² (MEC reference) is fixed, configurable or tool/process-specific — not confirmed for production.",
+        "Processed-area definition; one-side vs two-side area."
+      ])
+    }),
+
+    /* ---------- 03 Acid Rinse / HCl ---------- */
+    ACID_RINSE_MAKEUP: Object.freeze({
+      chemistry: "Acid Rinse / HCl", operation: "Make-Up", configVersion: "AR-MU-1.0",
+      sourceBasis: "MEC CZ-8401 + AP-3006 + Alkaline process guide",
+      basis: "volume",
+      components: Object.freeze([
+        Object.freeze({ name: "DI Water", percent: 90 }),
+        Object.freeze({ name: "35% HCl", percent: 10 })
+      ]),
+      info: Object.freeze(["Documented nominal concentration: approximately 1.2 mol/L."]),
+      notDefined: Object.freeze(["Mixing order (not given in the source)."])
+    }),
+    ACID_RINSE_REPLENISHMENT: Object.freeze({
+      chemistry: "Acid Rinse / HCl", operation: "Replenishment", configVersion: "AR-RP-1.0",
+      sourceBasis: "MEC process guide reference dosing (two-step treatment reference conditions)",
+      basis: "area", dosingLPerM2: 5.2,
+      components: Object.freeze([]),
+      info: Object.freeze([]),
+      notDefined: Object.freeze([
+        "Whether 5.2 L/m² (MEC reference, two-step treatment) is fixed, configurable or tool-specific — not confirmed for production.",
+        "Processed-area definition; one-side vs two-side area.",
+        "Replenisher composition and how replenishment is physically dosed."
+      ])
+    }),
+
+    /* ---------- 04 AP-3006 Bath Adjustment / M15 ---------- */
+    AP3006_BATH_ADJUSTMENT: Object.freeze({
+      chemistry: "AP-3006", operation: "Bath Adjustment (M15)", configVersion: "AP-3006-M15-1.0",
+      sourceBasis: "Approved AP-3006/CZ-8401/Alkaline calculation workbook, sheet M15",
+      // Contribution of each added material (EE and Accelerator in %, Cu in mg/L)
+      materials: Object.freeze([
+        Object.freeze({ key: "m1", name: "AP-3006M1", ee: 200, acc: 200, cu: 0 }),
+        Object.freeze({ key: "m2", name: "AP-3006M2", ee: 0, acc: 0, cu: 240 }),
+        Object.freeze({ key: "r",  name: "AP-3006R",  ee: 200, acc: 165, cu: 0 }),
+        Object.freeze({ key: "di", name: "DI Water",  ee: 0, acc: 0, cu: 0 })
+      ]),
+      optimum: Object.freeze({
+        ee:  Object.freeze({ target: 100, tol: 10, unit: "%" }),
+        acc: Object.freeze({ target: 100, tol: 20, unit: "%" }),
+        cu:  Object.freeze({ target: 30,  tol: 5,  unit: "mg/L" })
+      }),
+      display: Object.freeze({ volumeDecimals: 1, valueDecimals: 2 })
     })
   });
 

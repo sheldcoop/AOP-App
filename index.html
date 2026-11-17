@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AP-3006 Calculator</title>
+<title>AOP Chemistry Calculation</title>
 <style>
   :root { --bg:#f6f7f9; --card:#fff; --text:#1d2433; --muted:#5b6578; --border:#d9dee7; --accent:#1f5fbf; --err:#b42318; --errbg:#fdecea; --ok:#067647; }
   * { box-sizing: border-box; }
@@ -34,18 +34,25 @@
   .tabs button { font:inherit; font-weight:600; padding:10px 16px; border:none; background:none; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
   .tabs button[aria-selected="true"] { color:var(--accent); border-bottom-color:var(--accent); }
   .note { background:#fff8e6; border:1px solid #f3d27a; border-radius:8px; padding:10px 14px; font-size:.9rem; }
+  .chem-tabs { display:flex; flex-wrap:wrap; gap:6px; margin: 4px 0 14px; }
+  .chem-tabs button { font:inherit; font-weight:600; padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--text); cursor:pointer; }
+  .chem-tabs button[aria-selected="true"] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .tabs { flex-wrap:wrap; }
+  .pending { background:#f1f3f7; border:1px dashed #9aa4b5; border-radius:8px; padding:12px 14px; }
+  .status-ok { color: var(--ok); font-weight:600; } .status-out { color: var(--err); font-weight:600; }
+  .grid2 { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
+  .table-wrap { overflow-x:auto; }
   [hidden] { display:none !important; }
 </style>
 </head>
 <body>
 <main>
-  <h1>AP-3006</h1>
-  <div class="tabs" role="tablist">
-    <button role="tab" id="tab-makeup" aria-controls="panel-makeup" aria-selected="true">Make-Up</button>
-    <button role="tab" id="tab-replen" aria-controls="panel-replen" aria-selected="false">Replenishment</button>
-  </div>
+  <h1>AOP Chemistry Calculation</h1>
+  <p class="sub">Select a chemistry, then an operation.</p>
+  <div class="chem-tabs" role="tablist" id="chemTabs" aria-label="Chemistry"></div>
+  <div class="tabs" role="tablist" id="opTabs" aria-label="Operation"></div>
 
-  <div id="panel-makeup" role="tabpanel" aria-labelledby="tab-makeup">
+<div id="panel-makeup" role="tabpanel">
   <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Make-Up</h2>
   <p class="sub">Fresh AP-3006 working-bath preparation: AP-3006M1, AP-3006M2 and DI Water.</p>
 
@@ -98,7 +105,7 @@
   </div>
   </div>
 
-  <div id="panel-replen" role="tabpanel" aria-labelledby="tab-replen" hidden>
+  <div id="panel-replen" role="tabpanel" hidden>
     <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Replenishment</h2>
     <p class="sub">Replenisher quantity from processed area: AP-3006R, AP-3006M2 and DI Water.</p>
 
@@ -141,133 +148,49 @@
       </section>
     </div>
   </div>
+
+  <div id="panel-ap-ba" role="tabpanel" hidden>
+    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Bath Adjustment (M15)</h2>
+    <p class="sub">Predicts the final condition of an existing AP-3006 bath after operator-entered additions. Prediction only — the app does not recommend addition amounts.</p>
+    <div class="grid2">
+      <section aria-labelledby="baA">
+        <h2 id="baA">A. Current bath</h2>
+        <label for="ba-currentVolume">Current Working Solution Volume [L]</label><input id="ba-currentVolume" inputmode="decimal" autocomplete="off">
+        <label for="ba-ee">Effective Element [%]</label><input id="ba-ee" inputmode="decimal" autocomplete="off">
+        <label for="ba-acc">Accelerator [%]</label><input id="ba-acc" inputmode="decimal" autocomplete="off">
+        <label for="ba-cu">Cu [mg/L]</label><input id="ba-cu" inputmode="decimal" autocomplete="off">
+      </section>
+      <section aria-labelledby="baB">
+        <h2 id="baB">B. Additions [L]</h2>
+        <div id="ba-additions"></div>
+      </section>
+    </div>
+    <div class="errors" id="baErrors" role="alert" hidden><ul id="baErrorList"></ul></div>
+    <div id="baResults" hidden>
+      <section aria-labelledby="baC">
+        <h2 id="baC">C. Before / Addition / After / Target</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Parameter</th><th class="num">Before</th><th class="num">Change</th><th class="num">After</th><th class="num">Optimum</th><th>Status</th></tr></thead>
+          <tbody id="baTable"></tbody>
+        </table></div>
+        <p class="muted">Optimum ranges from the approved workbook. Displayed values are rounded for display only.</p>
+      </section>
+      <section aria-labelledby="baD">
+        <h2 id="baD">D. Calculation details</h2>
+        <details><summary>Show calculation</summary><pre id="baCalcDetails"></pre></details>
+      </section>
+    </div>
+  </div>
+
+  <div id="generatedPanels"></div>
 </main>
 
+<script src="js/common.js"></script>
 <script src="js/chemistry-config.js"></script>
 <script src="js/ap3006-makeup.js"></script>
 <script src="js/ap3006-replenishment.js"></script>
-<script>
-(function () {
-  var CFG = window.CHEMISTRY_CONFIG.AP3006_MAKEUP;
-  var D = CFG.display;
-  var $ = function (id) { return document.getElementById(id); };
-  var fmt = function (x, d) { return x.toFixed(d); };
-
-  $("cu").value = String(CFG.cuDefaultMgPerL);
-  $("cuHint").textContent = "Documented make-up range: " + CFG.cuMinMgPerL + "–" + CFG.cuMaxMgPerL + " mg/L";
-  CFG.mixOrder.forEach(function (name) {
-    var li = document.createElement("li"); li.textContent = name; $("mixOrder").appendChild(li);
-  });
-
-  function render() {
-    var r = window.AP3006MakeUp.calculateMakeUp($("volume").value, $("cu").value, CFG);
-    $("volume").removeAttribute("aria-invalid");
-    $("cu").removeAttribute("aria-invalid");
-
-    if (!r.ok) {
-      $("results").hidden = true;
-      var list = $("errorList"); list.innerHTML = "";
-      r.errors.forEach(function (e) {
-        var li = document.createElement("li"); li.textContent = e.message; list.appendChild(li);
-        if (e.field === "volume" || e.field === "cu") $(e.field).setAttribute("aria-invalid", "true");
-      });
-      $("errors").hidden = false;
-      return;
-    }
-
-    $("errors").hidden = true;
-    $("results").hidden = false;
-    $("m1Pct").textContent = fmt(r.percent.m1, D.percentDecimals) + " %";
-    $("m2Pct").textContent = fmt(r.percent.m2, D.percentDecimals) + " %";
-    $("diPct").textContent = fmt(r.percent.di, D.percentDecimals) + " %";
-    $("totPct").textContent = fmt(r.percent.m1 + r.percent.m2 + r.percent.di, D.percentDecimals) + " %";
-    $("m1L").textContent = fmt(r.litres.m1, D.volumeDecimals);
-    $("m2L").textContent = fmt(r.litres.m2, D.volumeDecimals);
-    $("diL").textContent = fmt(r.litres.di, D.volumeDecimals);
-    $("totL").textContent = fmt(r.totalL, D.volumeDecimals);
-    $("targetCu").textContent = fmt(r.inputs.targetCuMgPerL, D.cuDecimals) + " mg/L";
-    $("predCu").textContent = fmt(r.predictedCuMgPerL, D.cuDecimals) + " mg/L";
-
-    var V = r.inputs.finalVolumeL, Cu = r.inputs.targetCuMgPerL, K = CFG.m2CuEquivalentMgPerL, M1 = CFG.m1VolumePercent;
-    $("calcDetails").textContent = [
-      "Constants (" + r.configVersion + "): M1 = " + M1 + " v/v %, AP-3006M2 Cu equivalent = " + K + " mg/L",
-      "",
-      "M2 %  = Target Cu / " + K + " × 100     = " + Cu + " / " + K + " × 100 = " + r.percent.m2.toFixed(6),
-      "DI %  = 100 − " + M1 + " − M2 %          = " + r.percent.di.toFixed(6),
-      "M1 L  = Final Volume × " + M1 + " / 100  = " + V + " × " + M1 + " / 100 = " + r.litres.m1.toFixed(6),
-      "M2 L  = Final Volume × M2 % / 100 = " + r.litres.m2.toFixed(6),
-      "DI L  = Final Volume × DI % / 100 = " + r.litres.di.toFixed(6),
-      "",
-      "Balance:      M1 + M2 + DI = " + r.totalL.toFixed(6) + " L (requested " + V + " L)",
-      "Predicted Cu: " + K + " × M2 L / V = " + r.predictedCuMgPerL.toFixed(6) + " mg/L"
-    ].join("\n");
-  }
-
-  $("volume").addEventListener("input", render);
-  $("cu").addEventListener("input", render);
-  render();
-})();
-
-// Tabs (shared UI only)
-(function () {
-  var tabs = [["tab-makeup","panel-makeup"],["tab-replen","panel-replen"]];
-  tabs.forEach(function (t) {
-    document.getElementById(t[0]).addEventListener("click", function () {
-      tabs.forEach(function (u) {
-        var on = u[0] === t[0];
-        document.getElementById(u[0]).setAttribute("aria-selected", on);
-        document.getElementById(u[1]).hidden = !on;
-      });
-    });
-  });
-})();
-
-// Replenishment UI (independent calculation module)
-(function () {
-  var CFG = window.CHEMISTRY_CONFIG.AP3006_REPLENISHMENT;
-  var D = CFG.display;
-  var $ = function (id) { return document.getElementById(id); };
-  $("dosingHint").textContent = "Dosing basis: " + CFG.dosingLPerM2 + " L/m² (MEC reference dosing amount)";
-
-  function render() {
-    var r = window.AP3006Replenishment.calculateReplenishment($("area").value, CFG);
-    $("area").removeAttribute("aria-invalid");
-    if (!r.ok) {
-      $("rResults").hidden = true;
-      var list = $("rErrorList"); list.innerHTML = "";
-      r.errors.forEach(function (e) {
-        var li = document.createElement("li"); li.textContent = e.message; list.appendChild(li);
-        if (e.field === "area") $("area").setAttribute("aria-invalid", "true");
-      });
-      $("rErrors").hidden = false;
-      return;
-    }
-    $("rErrors").hidden = true;
-    $("rResults").hidden = false;
-    var p = D.percentDecimals, v = D.volumeDecimals;
-    $("rRPct").textContent = r.percent.r.toFixed(p) + " %";
-    $("rM2Pct").textContent = r.percent.m2.toFixed(p) + " %";
-    $("rDiPct").textContent = r.percent.di.toFixed(p) + " %";
-    $("rTotPct").textContent = (r.percent.r + r.percent.m2 + r.percent.di).toFixed(p) + " %";
-    $("rRL").textContent = r.litres.r.toFixed(v);
-    $("rM2L").textContent = r.litres.m2.toFixed(v);
-    $("rDiL").textContent = r.litres.di.toFixed(v);
-    $("rTotL").textContent = r.totalL.toFixed(v);
-    var A = r.inputs.processedAreaM2, k = r.dosingLPerM2;
-    $("rCalcDetails").textContent = [
-      "Constants (" + r.configVersion + "): dosing = " + k + " L/m²; AP-3006R " + r.percent.r + " %, AP-3006M2 " + r.percent.m2 + " %, DI " + r.percent.di + " %",
-      "",
-      "Total L     = Processed Area × " + k + " = " + A + " × " + k + " = " + r.totalL.toFixed(6),
-      "AP-3006R L  = Total × " + r.percent.r + " / 100 = " + r.litres.r.toFixed(6),
-      "AP-3006M2 L = Total × " + r.percent.m2 + " / 100 = " + r.litres.m2.toFixed(6),
-      "DI Water L  = Total × " + r.percent.di + " / 100 = " + r.litres.di.toFixed(6),
-      "",
-      "Balance: R + M2 + DI = " + (r.litres.r + r.litres.m2 + r.litres.di).toFixed(6) + " L"
-    ].join("\n");
-  }
-  $("area").addEventListener("input", render);
-  render();
-})();
-</script>
+<script src="js/ap3006-bath-adjustment.js"></script>
+<script src="js/recipe-calc.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
