@@ -193,7 +193,48 @@
     return Object.assign(base, { feasible: true, x1: x1, x2: x2, prediction: pred, hasBath: hasBath });
   }
 
-  var api = { calculateForTargetCu: calculateForTargetCu, calculateBathAdjustment: calculateBathAdjustment, calculateTankMix: calculateTankMix,
+  /*
+   * Three-liquid mix (operator's model): Tank 1 (Cu c1), Tank 2 (Cu c2) and DI Water (Cu 0)
+   * are mixed into a final volume Vf at a target Cu. The operator chooses the litres
+   * from Tank 2; the app returns Tank 1 and DI Water:
+   *   T1 = (Cu_target × Vf − c2 × T2) / c1
+   *   DI = Vf − T1 − T2
+   */
+  function calculateThreeLiquidMix(inputs) {
+    var errors = [], v = {};
+    parseFields([{ key: "cu1", label: "Tank 1 Cu [mg/L]" }, { key: "cu2", label: "Tank 2 Cu [mg/L]" },
+                 { key: "finalVolume", label: "Final volume [L]" }, { key: "targetCu", label: "Target Cu [mg/L]" },
+                 { key: "t2", label: "Litres from Tank 2" }], inputs, errors, v);
+    if (!errors.length) {
+      if (!(v.cu1 > 0)) errors.push({ field: "cu1", code: "not_positive", message: "Tank 1 Cu must be greater than 0 mg/L." });
+      if (!(v.finalVolume > 0)) errors.push({ field: "finalVolume", code: "not_positive", message: "Final volume must be greater than 0 L." });
+    }
+    if (errors.length) return { ok: false, errors: errors };
+    var Vf = v.finalVolume, Ct = v.targetCu, c1 = v.cu1, c2 = v.cu2;
+    // Allowed Tank 2 range: T1 ≥ 0 and DI ≥ 0
+    var hi = c2 > 0 ? Ct * Vf / c2 : Infinity;                      // T1 ≥ 0
+    var lo = 0;
+    if (Ct > c1) {                                                  // DI ≥ 0 needs enough Tank 2
+      if (c2 > c1) lo = (Ct - c1) * Vf / (c2 - c1); else hi = -1;
+    }
+    var range = { min: lo, max: Math.min(hi, Vf) };
+    var t1 = (Ct * Vf - c2 * v.t2) / c1;
+    var di = Vf - t1 - v.t2;
+    var eps = 1e-9 * Math.max(1, Vf);
+    if (Math.abs(t1) < eps) t1 = 0;
+    if (Math.abs(di) < eps) di = 0;
+    var feasible = t1 >= 0 && di >= 0;
+    var res = { ok: true, inputs: v, t1: t1, t2: v.t2, di: di, range: range, feasible: feasible,
+                checkCu: (c1 * t1 + c2 * v.t2) / Vf };
+    if (!feasible) {
+      res.message = range.max < range.min || range.max < 0
+        ? "Target Cu " + Ct + " mg/L cannot be made from these tanks."
+        : "Not possible with " + v.t2 + " L from Tank 2. Use between " + range.min.toFixed(1) + " and " + range.max.toFixed(1) + " L from Tank 2.";
+    }
+    return res;
+  }
+
+  var api = { calculateForTargetCu: calculateForTargetCu, calculateBathAdjustment: calculateBathAdjustment, calculateTankMix: calculateTankMix, calculateThreeLiquidMix: calculateThreeLiquidMix,
               solutionContributions: solutionContributions, classify: classify, FIELDS: FIELDS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.AP3006BathAdjustment = api;

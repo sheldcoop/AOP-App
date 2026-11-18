@@ -27,25 +27,17 @@ Navigation: select a chemistry (01–05), then an operation (Make-Up / Replenish
 - Full internal precision everywhere. Display: litres 0.1 L, percentages 2 dp.
 - No saving, printing, export, approvals or lot recording.
 
-## AP-3006 Bath Adjustment (three tanks)
-Tank 1 and Tank 2 hold solutions; Tank 3 is the mixing tank, either empty or holding the existing bath.
-The operator enters Tank 3's current volume (and its measured EE / Accelerator / Cu if it isn't empty), the final volume wanted and the target Cu.
-The app returns three numbers: **litres from Tank 1, litres from Tank 2, and Tank 3 total**.
+## AP-3006 Bath Adjustment (Tank 1 + Tank 2 + DI Water)
+The operator enters the Cu in Tank 1 and Tank 2, the final volume, the target Cu and the litres to take from Tank 2.
+The app returns litres from Tank 1, litres from Tank 2 and litres of DI Water:
 
-- T1 + T2 = V_final − V_now
-- Cu_T1·T1 + Cu_T2·T2 = Cu_target·V_final − Cu_now·V_now
-- Predicted EE / Accelerator / Cu use the workbook M15 balance. Statuses use the optimum ranges and control limits, with workbook guidance shown when needed.
-- If the target can't be reached, the app shows the Cu range that is achievable.
+- Tank 1 = (Target Cu × Final volume − Tank 2 Cu × Tank 2 L) ÷ Tank 1 Cu
+- DI = Final volume − Tank 1 − Tank 2
+- The allowed Tank 2 range (Tank 1 ≥ 0 and DI ≥ 0) is shown under the input.
 
-Solutions a tank can hold (values derived from the M15 constants):
+Example (user's): Tank 1 30 mg/L, Tank 2 54 mg/L, 100 L at 18 mg/L, 10 L from Tank 2 → 42 L Tank 1 + 10 L Tank 2 + 48 L DI.
 
-| Solution | Composition | EE | Acc | Cu |
-|---|---|---:|---:|---:|
-| DI Water | 100 % DI | 0 | 0 | 0 |
-| Make-up premix | M1 50 %, M2 = Cu/240 × 100, DI balance | 100 % | 100 % | operator enters (10–35 mg/L) |
-| Replenisher mix | R 70 %, M2 22.5 %, DI 7.5 % | 140 % | 115.5 % | 54 mg/L |
-
-Example: Tank 3 holds 100 L (EE 90.8 %, Acc 78.2 %, Cu 22). Tank 1 = replenisher mix, Tank 2 = DI, target 150 L at 30 mg/L → 42.6 L from Tank 1, 7.4 L from Tank 2, giving EE 100.3 %, Acc 84.9 %, Cu 30.
+Earlier versions (M15 prediction, three-tank solver) remain in `js/ap3006-bath-adjustment.js` with tests but are not shown on screen.
 
 ## Not defined yet — do not assume
 - Tank capacity, fill volume, number of tanks/tools, dosing increment / executable rounding.

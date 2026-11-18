@@ -73,85 +73,47 @@ function guidanceHtml(pred) {
   return items.length ? '<div class="errors" style="margin-top:12px"><strong>Workbook guidance</strong><ul>' + items.join("") + "</ul></div>" : "";
 }
 
-// AP-3006 Bath Adjustment UI — three-tank mix
+// AP-3006 Bath Adjustment UI — Tank 1 + Tank 2 + DI Water
 (function () {
-  var CFG = window.CHEMISTRY_CONFIG.AP3006_BATH_ADJUSTMENT;
   var BA = window.AP3006BathAdjustment;
-  var D = CFG.display;
   var $ = function (id) { return document.getElementById(id); };
-  var f = function (x) { return x.toFixed(D.valueDecimals); };
-  var fl = function (x) { return x.toFixed(D.volumeDecimals); };
-  var n6 = function (x) { return +x.toFixed(6); };
-
-  var opts = CFG.solutions.map(function (s) { return '<option value="' + s.key + '">' + s.name + "</option>"; }).join("");
-  $("tm-tank1").innerHTML = opts; $("tm-tank2").innerHTML = opts;
-  $("tm-tank1").value = "rp"; $("tm-tank2").value = "di";
-  $("tm-targetCu").value = String(CFG.defaultTargetCuMgPerL);
-  $("tm-targetHint").textContent = "Optimum " + CFG.optimum.cu.target + " ± " + CFG.optimum.cu.tol + " mg/L";
-  $("tm-premixHint").textContent = "Made with the Make-Up recipe (" + CFG.premixCuMinMgPerL + "–" + CFG.premixCuMaxMgPerL + " mg/L).";
-  $("tmTankWarn").textContent = CFG.tankWarning;
-
-  function tankInfo(key) {
-    var pc = BA.solutionContributions(CFG, Number($("tm-premixCu").value) || null);
-    var s = pc.filter(function (x) { return x.key === key; })[0];
-    if (!s || s.unavailable) return "Enter the premix Cu below.";
-    var comp = Object.keys(s.composition).map(function (k) { return CFG.chemicals[k].name.replace("AP-3006", "") + " " + (+s.composition[k].toFixed(2)) + " %"; }).join(" / ");
-    return comp + " → EE " + (+s.ee.toFixed(2)) + " % · Acc " + (+s.acc.toFixed(2)) + " % · Cu " + (+s.cu.toFixed(2)) + " mg/L";
-  }
+  var keys = ["cu1", "cu2", "finalVolume", "targetCu", "t2"];
+  var fl = function (x) { return x.toFixed(1); };
+  var n = function (x) { return +x.toFixed(6); };
 
   function render() {
-    var t1 = $("tm-tank1").value, t2 = $("tm-tank2").value;
-    $("tm-premixRow").hidden = !(t1 === "mu" || t2 === "mu");
-    var cv = Number($("tm-currentVolume").value);
-    $("tm-bathFields").hidden = !(cv > 0);
-    $("tm-info1").textContent = tankInfo(t1); $("tm-info2").textContent = tankInfo(t2);
-    Array.prototype.forEach.call(document.querySelectorAll("#panel-ap-ba input, #panel-ap-ba select"), function (i) { i.removeAttribute("aria-invalid"); });
-
-    var inp = { tank1: t1, tank2: t2 };
-    ["currentVolume", "ee", "acc", "cu", "finalVolume", "targetCu", "premixCu"].forEach(function (k) { inp[k] = $("tm-" + k).value; });
-    var r = BA.calculateTankMix(inp, CFG);
+    var inp = {};
+    keys.forEach(function (k) { inp[k] = $("tl-" + k).value; $("tl-" + k).removeAttribute("aria-invalid"); });
+    var r = BA.calculateThreeLiquidMix(inp);
     if (!r.ok) {
-      $("tmResults").hidden = true;
-      $("tmErrorList").innerHTML = "";
+      $("tlResults").hidden = true; $("tl-range").textContent = "";
+      $("tlErrorList").innerHTML = "";
       r.errors.forEach(function (e) {
-        var li = document.createElement("li"); li.textContent = e.message; $("tmErrorList").appendChild(li);
-        if ($("tm-" + e.field)) $("tm-" + e.field).setAttribute("aria-invalid", "true");
+        var li = document.createElement("li"); li.textContent = e.message; $("tlErrorList").appendChild(li);
+        $("tl-" + e.field).setAttribute("aria-invalid", "true");
       });
-      $("tmErrors").hidden = false;
+      $("tlErrors").hidden = false;
       return;
     }
-    $("tmErrors").hidden = true; $("tmResults").hidden = false;
-    $("tmBlocked").hidden = r.feasible; $("tmOk").hidden = !r.feasible;
-    if (!r.feasible) { $("tmBlocked").textContent = r.message; return; }
-
-    $("tm-out1").textContent = fl(r.x1) + " L"; $("tm-out1n").textContent = r.tank1.name;
-    $("tm-out2").textContent = fl(r.x2) + " L"; $("tm-out2n").textContent = r.tank2.name;
-    $("tm-out3").textContent = fl(r.prediction.volume.after) + " L";
-    var p = r.prediction;
-    $("tm-pred").innerHTML = [["ee", "Effective Element", "%"], ["acc", "Accelerator", "%"], ["cu", "Cu", "mg/L"]].map(function (q) {
-      var x = p.params[q[0]];
-      return '<div class="chip"><div class="chip-name">' + q[1] + '</div><div class="chip-val">' + f(x.after) + " " + q[2] + "</div>" + statusHtml(x.status) + "</div>";
-    }).join("");
-    $("tmGuidance").innerHTML = guidanceHtml(p);
-
-    var v = r.inputs, A = v.finalVolume - v.currentVolume;
-    $("tmCalc").textContent = [
-      "Tank 1: " + r.tank1.name + " — EE " + n6(r.tank1.ee) + " %, Acc " + n6(r.tank1.acc) + " %, Cu " + n6(r.tank1.cu) + " mg/L",
-      "Tank 2: " + r.tank2.name + " — EE " + n6(r.tank2.ee) + " %, Acc " + n6(r.tank2.acc) + " %, Cu " + n6(r.tank2.cu) + " mg/L",
-      "(solution values from workbook M15 constants: M1 EE 200 / Acc 200; M2 Cu 240; R EE 200 / Acc 165)",
+    $("tlErrors").hidden = true; $("tlResults").hidden = false;
+    $("tl-range").textContent = r.range.max >= r.range.min && r.range.max >= 0
+      ? "Possible: " + fl(r.range.min) + " – " + fl(r.range.max) + " L" : "";
+    $("tlBlocked").hidden = r.feasible; $("tlOk").hidden = !r.feasible;
+    if (!r.feasible) { $("tlBlocked").textContent = r.message; $("tl-t2").setAttribute("aria-invalid", "true"); return; }
+    $("tl-out1").textContent = fl(r.t1) + " L";
+    $("tl-out2").textContent = fl(r.t2) + " L";
+    $("tl-out3").textContent = fl(r.di) + " L";
+    var v = r.inputs;
+    $("tl-total").innerHTML = "<strong>Total " + fl(v.finalVolume) + " L at " + (+r.checkCu.toFixed(2)) + " mg/L Cu</strong>";
+    $("tlCalc").textContent = [
+      "Tank 1 = (Target Cu × Final volume − Tank 2 Cu × Tank 2 L) ÷ Tank 1 Cu",
+      "       = (" + v.targetCu + " × " + v.finalVolume + " − " + v.cu2 + " × " + v.t2 + ") ÷ " + v.cu1 + " = " + n(r.t1) + " L",
+      "DI     = Final volume − Tank 1 − Tank 2 = " + v.finalVolume + " − " + n(r.t1) + " − " + v.t2 + " = " + n(r.di) + " L",
       "",
-      "Volume to add:  T1 + T2 = " + v.finalVolume + " − " + v.currentVolume + " = " + n6(A) + " L",
-      "Cu balance:     " + n6(r.tank1.cu) + "·T1 + " + n6(r.tank2.cu) + "·T2 = " + v.targetCu + " × " + v.finalVolume + " − " + v.cu + " × " + v.currentVolume,
-      "→ T1 = " + n6(r.x1) + " L,  T2 = " + n6(r.x2) + " L",
-      "",
-      "Predicted: Final_X = (X_now × V_now + X_T1 × T1 + X_T2 × T2) / V_final",
-      "  EE " + n6(p.params.ee.after) + " %, Accelerator " + n6(p.params.acc.after) + " %, Cu " + n6(p.params.cu.after) + " mg/L"
+      "Check: (" + v.cu1 + " × " + n(r.t1) + " + " + v.cu2 + " × " + v.t2 + " + 0 × " + n(r.di) + ") ÷ " + v.finalVolume + " = " + n(r.checkCu) + " mg/L"
     ].join("\n");
   }
-
-  Array.prototype.forEach.call(document.querySelectorAll("#panel-ap-ba input, #panel-ap-ba select"), function (i) {
-    i.addEventListener("input", render); i.addEventListener("change", render);
-  });
+  keys.forEach(function (k) { $("tl-" + k).addEventListener("input", render); });
   render();
 })();
 

@@ -125,63 +125,38 @@
 
   <div id="panel-ap-ba" role="tabpanel" hidden>
     <h2 class="panel-title">AP-3006 Bath Adjustment</h2>
-    <p class="sub">Enter what you need in Tank 3 — get how much to take from Tank 1 and Tank 2.</p>
+    <p class="sub">Mix Tank 1, Tank 2 and DI Water to the Cu you need.</p>
 
     <section>
-      <h2>1. Tanks</h2>
       <div class="tank-grid">
-        <div class="tank-card">
-          <div class="tank-label">Tank 1</div>
-          <select id="tm-tank1" aria-label="Tank 1 solution"></select>
-          <div class="tank-info" id="tm-info1"></div>
-        </div>
-        <div class="tank-card">
-          <div class="tank-label">Tank 2</div>
-          <select id="tm-tank2" aria-label="Tank 2 solution"></select>
-          <div class="tank-info" id="tm-info2"></div>
-        </div>
-        <div class="tank-card tank-mix">
-          <div class="tank-label">Tank 3 — mixing tank</div>
-          <label for="tm-currentVolume">Volume now [L] <span class="muted">(0 = empty)</span></label>
-          <input id="tm-currentVolume" inputmode="decimal" autocomplete="off" value="0">
-          <div id="tm-bathFields" hidden>
-            <label for="tm-ee">Effective Element [%]</label><input id="tm-ee" inputmode="decimal" autocomplete="off">
-            <label for="tm-acc">Accelerator [%]</label><input id="tm-acc" inputmode="decimal" autocomplete="off">
-            <label for="tm-cu">Cu [mg/L]</label><input id="tm-cu" inputmode="decimal" autocomplete="off">
-          </div>
-        </div>
+        <div class="tank-card"><div class="tank-label">Tank 1</div>
+          <label for="tl-cu1">Cu [mg/L]</label><input id="tl-cu1" inputmode="decimal" autocomplete="off"></div>
+        <div class="tank-card"><div class="tank-label">Tank 2</div>
+          <label for="tl-cu2">Cu [mg/L]</label><input id="tl-cu2" inputmode="decimal" autocomplete="off">
+          <div class="tank-info">Replenisher mix = 54 mg/L</div></div>
+        <div class="tank-card"><div class="tank-label">DI Water</div>
+          <div class="tank-info" style="margin-top:0">Cu 0 mg/L</div></div>
       </div>
-      <div id="tm-premixRow" hidden>
-        <label for="tm-premixCu">Cu of the make-up premix [mg/L]</label>
-        <input id="tm-premixCu" inputmode="decimal" autocomplete="off">
-        <div class="hint" id="tm-premixHint"></div>
+      <div class="grid2" style="margin-top:8px">
+        <div><label for="tl-finalVolume">Final volume [L]</label><input id="tl-finalVolume" inputmode="decimal" autocomplete="off"></div>
+        <div><label for="tl-targetCu">Target Cu [mg/L]</label><input id="tl-targetCu" inputmode="decimal" autocomplete="off"></div>
+        <div><label for="tl-t2">Litres from Tank 2</label><input id="tl-t2" inputmode="decimal" autocomplete="off">
+          <div class="hint" id="tl-range"></div></div>
       </div>
+      <div class="errors" id="tlErrors" role="alert" hidden><ul id="tlErrorList"></ul></div>
     </section>
 
-    <section>
-      <h2>2. What you need in Tank 3</h2>
-      <div class="grid2">
-        <div><label for="tm-finalVolume">Final volume [L]</label><input id="tm-finalVolume" inputmode="decimal" autocomplete="off"></div>
-        <div><label for="tm-targetCu">Target Cu [mg/L]</label><input id="tm-targetCu" inputmode="decimal" autocomplete="off">
-          <div class="hint" id="tm-targetHint"></div></div>
-      </div>
-      <div class="errors" id="tmErrors" role="alert" hidden><ul id="tmErrorList"></ul></div>
-    </section>
-
-    <div id="tmResults" hidden>
-      <div class="errors" id="tmBlocked" hidden></div>
-      <div id="tmOk">
+    <div id="tlResults" hidden>
+      <div class="errors" id="tlBlocked" hidden></div>
+      <div id="tlOk">
         <div class="tiles">
-          <div class="tile"><div class="tile-label">From Tank 1</div><div class="tile-value" id="tm-out1"></div><div class="tile-sub" id="tm-out1n"></div></div>
-          <div class="tile"><div class="tile-label">From Tank 2</div><div class="tile-value" id="tm-out2"></div><div class="tile-sub" id="tm-out2n"></div></div>
-          <div class="tile tile-total"><div class="tile-label">Tank 3 total</div><div class="tile-value" id="tm-out3"></div><div class="tile-sub">after mixing</div></div>
+          <div class="tile"><div class="tile-label">From Tank 1</div><div class="tile-value" id="tl-out1"></div></div>
+          <div class="tile"><div class="tile-label">From Tank 2</div><div class="tile-value" id="tl-out2"></div></div>
+          <div class="tile"><div class="tile-label">DI Water</div><div class="tile-value" id="tl-out3"></div></div>
         </div>
         <section>
-          <h2>Predicted Tank 3</h2>
-          <div class="chips" id="tm-pred"></div>
-          <div id="tmGuidance"></div>
-          <p class="note" id="tmTankWarn" style="margin-top:12px"></p>
-          <details style="margin-top:10px"><summary>Show calculation</summary><pre id="tmCalc"></pre></details>
+          <p style="margin:0;font-size:1.1rem" id="tl-total"></p>
+          <details style="margin-top:10px"><summary>Show calculation</summary><pre id="tlCalc"></pre></details>
         </section>
       </div>
     </div>
