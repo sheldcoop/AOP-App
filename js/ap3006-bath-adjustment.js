@@ -144,7 +144,56 @@
     return r;
   }
 
-  var api = { calculateForTargetCu: calculateForTargetCu, calculateBathAdjustment: calculateBathAdjustment,
+  /*
+   * Three-tank mix: Tank 1 and Tank 2 hold solutions; Tank 3 is the mixing tank
+   * (empty, or holding the existing bath). The operator enters the final volume
+   * wanted in Tank 3 and the target Cu; the app returns how much to take from
+   * Tank 1 and Tank 2.
+   *   x1 + x2 = Vf − V0
+   *   c1·x1 + c2·x2 = Cu_target·Vf − Cu0·V0
+   */
+  function calculateTankMix(inputs, cfg) {
+    var errors = [], v = {};
+    parseFields([{ key: "currentVolume", label: "Tank 3 current volume [L]" },
+                 { key: "finalVolume", label: "Final volume in Tank 3 [L]" },
+                 { key: "targetCu", label: "Target Cu [mg/L]" }], inputs, errors, v);
+    var hasBath = v.currentVolume > 0;
+    if (hasBath) {
+      parseFields([{ key: "ee", label: "Tank 3 Effective Element [%]" },
+                   { key: "acc", label: "Tank 3 Accelerator [%]" },
+                   { key: "cu", label: "Tank 3 Cu [mg/L]" }], inputs, errors, v);
+    } else { v.ee = 0; v.acc = 0; v.cu = 0; }
+    var needPremix = inputs.tank1 === "mu" || inputs.tank2 === "mu";
+    var premixCu = parsePremix(inputs.premixCu, cfg, errors, needPremix);
+    if (inputs.tank1 === inputs.tank2) errors.push({ field: "tank2", code: "same", message: "Tank 1 and Tank 2 must hold different solutions." });
+    if (!errors.length && !(v.finalVolume > v.currentVolume)) errors.push({ field: "finalVolume", code: "too_small",
+      message: "Final volume must be greater than the current volume in Tank 3 (" + v.currentVolume + " L)." });
+    if (!errors.length && !(v.targetCu > 0)) errors.push({ field: "targetCu", code: "not_positive", message: "Target Cu must be greater than 0 mg/L." });
+    if (errors.length) return { ok: false, errors: errors };
+
+    var sols = solutionContributions(cfg, premixCu);
+    var s1 = sols.filter(function (s) { return s.key === inputs.tank1; })[0];
+    var s2 = sols.filter(function (s) { return s.key === inputs.tank2; })[0];
+    var A = v.finalVolume - v.currentVolume;
+    var B = v.targetCu * v.finalVolume - v.cu * v.currentVolume;
+    var base = { ok: true, configVersion: cfg.configVersion, inputs: v, tank1: s1, tank2: s2, premixCu: premixCu };
+    if (C.approxEqual(s1.cu, s2.cu)) return Object.assign(base, { feasible: false,
+      message: "Tank 1 and Tank 2 have the same Cu (" + s1.cu.toFixed(2) + " mg/L), so they cannot be mixed to a different Cu." });
+    var x1 = (B - s2.cu * A) / (s1.cu - s2.cu), x2 = A - x1;
+    if (Math.abs(x1) < 1e-9 * Math.max(1, A)) x1 = 0;
+    if (Math.abs(x2) < 1e-9 * Math.max(1, A)) x2 = 0;
+    if (x1 < 0 || x2 < 0) {
+      var lo = (s1.cu * A + v.cu * v.currentVolume) / v.finalVolume, hi = (s2.cu * A + v.cu * v.currentVolume) / v.finalVolume;
+      return Object.assign(base, { feasible: false, x1: x1, x2: x2,
+        message: "Not possible with these tanks: at " + v.finalVolume + " L the Cu can only be between " +
+          Math.min(lo, hi).toFixed(2) + " and " + Math.max(lo, hi).toFixed(2) + " mg/L. Change the target Cu, the final volume or the tank solutions." });
+    }
+    var add = {}; add[s1.key] = x1; add[s2.key] = x2;
+    var pred = predict(v, add, [s1, s2], cfg);
+    return Object.assign(base, { feasible: true, x1: x1, x2: x2, prediction: pred, hasBath: hasBath });
+  }
+
+  var api = { calculateForTargetCu: calculateForTargetCu, calculateBathAdjustment: calculateBathAdjustment, calculateTankMix: calculateTankMix,
               solutionContributions: solutionContributions, classify: classify, FIELDS: FIELDS };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.AP3006BathAdjustment = api;

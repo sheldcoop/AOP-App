@@ -117,9 +117,9 @@
         Object.freeze({ key: "di", name: "DI Water", composition: Object.freeze({ di: 100 }) }),
         // Lab premix made with the Make-Up recipe: M1 50 %, M2 = premix Cu / 240 × 100, DI balance.
         // Its Cu is entered by the operator.
-        Object.freeze({ key: "mu", name: "Fresh make-up mix (lab premix)", premix: true, m1Percent: 50 }),
+        Object.freeze({ key: "mu", name: "Make-up premix", premix: true, m1Percent: 50 }),
         // MEC replenisher mixture
-        Object.freeze({ key: "rp", name: "Replenisher mix (R 70 / M2 22.5 / DI 7.5)",
+        Object.freeze({ key: "rp", name: "Replenisher mix",
                         composition: Object.freeze({ r: 70, m2: 22.5, di: 7.5 }) })
       ]),
       // The premix is made with the Make-Up recipe, whose documented Cu range is 10–35 mg/L

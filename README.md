@@ -27,21 +27,25 @@ Navigation: select a chemistry (01–05), then an operation (Make-Up / Replenish
 - Full internal precision everywhere. Display: litres 0.1 L, percentages 2 dp.
 - No saving, printing, export, approvals or lot recording.
 
-## AP-3006 Bath Adjustment
-Starts from the measured bath: volume [L], Effective Element [%], Accelerator [%], Cu [mg/L].
-Only solutions available at the machine are used (user-confirmed); AP-3006M1 is not available on its own:
+## AP-3006 Bath Adjustment (three tanks)
+Tank 1 and Tank 2 hold solutions; Tank 3 is the mixing tank, either empty or holding the existing bath.
+The operator enters Tank 3's current volume (and its measured EE / Accelerator / Cu if it isn't empty), the final volume wanted and the target Cu.
+The app returns three numbers: **litres from Tank 1, litres from Tank 2, and Tank 3 total**.
+
+- T1 + T2 = V_final − V_now
+- Cu_T1·T1 + Cu_T2·T2 = Cu_target·V_final − Cu_now·V_now
+- Predicted EE / Accelerator / Cu use the workbook M15 balance. Statuses use the optimum ranges and control limits, with workbook guidance shown when needed.
+- If the target can't be reached, the app shows the Cu range that is achievable.
+
+Solutions a tank can hold (values derived from the M15 constants):
 
 | Solution | Composition | EE | Acc | Cu |
 |---|---|---:|---:|---:|
 | DI Water | 100 % DI | 0 | 0 | 0 |
-| Fresh make-up premix (lab) | M1 50 %, M2 = premix Cu/240 × 100, DI balance | 100 % | 100 % | premix Cu (operator enters, 10–35 mg/L) |
+| Make-up premix | M1 50 %, M2 = Cu/240 × 100, DI balance | 100 % | 100 % | operator enters (10–35 mg/L) |
 | Replenisher mix | R 70 %, M2 22.5 %, DI 7.5 % | 140 % | 115.5 % | 54 mg/L |
 
-Contributions are derived from the workbook M15 single-chemical constants (M1 EE 200 / Acc 200; M2 Cu 240 mg/L; R EE 200 / Acc 165).
-
-- **Target Cu → how much to add:** for each solution used on its own, amount = V × (Target − Cu) / (Cu_solution − Target), plus the predicted EE, Accelerator and Cu. A solution that cannot move Cu towards the target is shown as not possible. Example: 500 L at 40 → 30 mg/L needs 166.7 L DI (EE drops to 75 %) or 250 L of a 10 mg/L premix (EE stays 100 %).
-- **Check my additions:** the M15 concentration balance applied to the entered amounts of the three solutions.
-- Statuses use the workbook optimum ranges (Cu 30 ± 5, EE 100 ± 10, Acc 100 ± 20) and control limits (Cu 10–35, EE 85–115, Acc 75–125). Workbook guidance text and the tank-volume warning are shown.
+Example: Tank 3 holds 100 L (EE 90.8 %, Acc 78.2 %, Cu 22). Tank 1 = replenisher mix, Tank 2 = DI, target 150 L at 30 mg/L → 42.6 L from Tank 1, 7.4 L from Tank 2, giving EE 100.3 %, Acc 84.9 %, Cu 30.
 
 ## Not defined yet — do not assume
 - Tank capacity, fill volume, number of tanks/tools, dosing increment / executable rounding.

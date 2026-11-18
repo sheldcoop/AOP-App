@@ -42,6 +42,24 @@
   .status-ok { color: var(--ok); font-weight:600; } .status-out { color: var(--err); font-weight:600; }
   .grid2 { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
   .table-wrap { overflow-x:auto; }
+  .panel-title { font-size:1.3rem; margin:0 0 4px; }
+  select { font:inherit; font-size:1rem; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); width:100%; }
+  .tank-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; align-items:start; }
+  .tank-card { border:1px solid var(--border); border-radius:10px; padding:12px; background:#fafbfc; }
+  .tank-card input { max-width:100%; }
+  .tank-mix { border-color: var(--accent); }
+  .tank-label { font-weight:700; color:var(--accent); margin-bottom:8px; }
+  .tank-info { font-size:.85rem; color:var(--muted); margin-top:8px; font-variant-numeric: tabular-nums; }
+  .tiles { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px; }
+  .tile { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center; }
+  .tile-total { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .tile-label { font-size:.85rem; font-weight:600; text-transform:uppercase; letter-spacing:.04em; opacity:.8; }
+  .tile-value { font-size:2.2rem; font-weight:800; margin:6px 0 2px; font-variant-numeric: tabular-nums; }
+  .tile-sub { font-size:.9rem; opacity:.85; }
+  .chips { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px; }
+  .chip { border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .chip-name { font-size:.85rem; color:var(--muted); }
+  .chip-val { font-size:1.4rem; font-weight:700; font-variant-numeric: tabular-nums; }
   [hidden] { display:none !important; }
 </style>
 </head>
@@ -106,65 +124,65 @@
   </div>
 
   <div id="panel-ap-ba" role="tabpanel" hidden>
-    <h2 style="font-size:1.3rem;margin:0 0 4px">AP-3006 Bath Adjustment</h2>
-    <p class="sub"><strong>Lab results → DI Water / fresh make-up premix / replenisher mix.</strong> Starts from measured analysis of the existing working bath. Only solutions available at the machine are used; AP-3006M1 is not added on its own.</p>
+    <h2 class="panel-title">AP-3006 Bath Adjustment</h2>
+    <p class="sub">Enter what you need in Tank 3 — get how much to take from Tank 1 and Tank 2.</p>
 
-    <section aria-labelledby="baA">
-      <h2 id="baA">A. Measured bath analysis</h2>
-      <div class="grid2">
-        <div>
-          <label for="ba-currentVolume">Working Solution Volume [L]</label><input id="ba-currentVolume" inputmode="decimal" autocomplete="off">
-          <label for="ba-ee">Effective Element [%]</label><input id="ba-ee" inputmode="decimal" autocomplete="off">
+    <section>
+      <h2>1. Tanks</h2>
+      <div class="tank-grid">
+        <div class="tank-card">
+          <div class="tank-label">Tank 1</div>
+          <select id="tm-tank1" aria-label="Tank 1 solution"></select>
+          <div class="tank-info" id="tm-info1"></div>
         </div>
-        <div>
-          <label for="ba-acc">Accelerator [%]</label><input id="ba-acc" inputmode="decimal" autocomplete="off">
-          <label for="ba-cu">Cu [mg/L]</label><input id="ba-cu" inputmode="decimal" autocomplete="off">
+        <div class="tank-card">
+          <div class="tank-label">Tank 2</div>
+          <select id="tm-tank2" aria-label="Tank 2 solution"></select>
+          <div class="tank-info" id="tm-info2"></div>
+        </div>
+        <div class="tank-card tank-mix">
+          <div class="tank-label">Tank 3 — mixing tank</div>
+          <label for="tm-currentVolume">Volume now [L] <span class="muted">(0 = empty)</span></label>
+          <input id="tm-currentVolume" inputmode="decimal" autocomplete="off" value="0">
+          <div id="tm-bathFields" hidden>
+            <label for="tm-ee">Effective Element [%]</label><input id="tm-ee" inputmode="decimal" autocomplete="off">
+            <label for="tm-acc">Accelerator [%]</label><input id="tm-acc" inputmode="decimal" autocomplete="off">
+            <label for="tm-cu">Cu [mg/L]</label><input id="tm-cu" inputmode="decimal" autocomplete="off">
+          </div>
         </div>
       </div>
-      <label for="ba-premixCu">Cu of the lab's fresh make-up premix [mg/L]</label><input id="ba-premixCu" inputmode="decimal" autocomplete="off">
-      <div class="hint" id="ba-premixHint"></div>
+      <div id="tm-premixRow" hidden>
+        <label for="tm-premixCu">Cu of the make-up premix [mg/L]</label>
+        <input id="tm-premixCu" inputmode="decimal" autocomplete="off">
+        <div class="hint" id="tm-premixHint"></div>
+      </div>
     </section>
 
-    <div class="tabs" role="tablist" aria-label="Bath adjustment mode">
-      <button role="tab" id="ba-mode-target" aria-selected="true">Target Cu → how much to add</button>
-      <button role="tab" id="ba-mode-check" aria-selected="false">Check my additions</button>
-    </div>
-
-    <div id="ba-target-mode">
-      <section>
-        <label for="ba-targetCu" style="margin-top:0">Target Cu [mg/L]</label><input id="ba-targetCu" inputmode="decimal" autocomplete="off">
-        <div class="hint" id="ba-targetHint"></div>
-      </section>
-      <div class="errors" id="btErrors" role="alert" hidden><ul id="btErrorList"></ul></div>
-      <div id="btResults" hidden>
-        <section>
-          <h2>B. Options to reach the target Cu</h2>
-          <p id="btDirection" style="margin:0 0 10px"></p>
-          <div id="btOptions"></div>
-          <p class="note" id="btTankWarn" style="margin-top:12px"></p>
-          <p class="muted">Each option uses one solution on its own. Displayed values are rounded for display only.</p>
-        </section>
-        <section><h2>C. Calculation details</h2><details><summary>Show calculation</summary><pre id="btCalc"></pre></details></section>
+    <section>
+      <h2>2. What you need in Tank 3</h2>
+      <div class="grid2">
+        <div><label for="tm-finalVolume">Final volume [L]</label><input id="tm-finalVolume" inputmode="decimal" autocomplete="off"></div>
+        <div><label for="tm-targetCu">Target Cu [mg/L]</label><input id="tm-targetCu" inputmode="decimal" autocomplete="off">
+          <div class="hint" id="tm-targetHint"></div></div>
       </div>
-    </div>
+      <div class="errors" id="tmErrors" role="alert" hidden><ul id="tmErrorList"></ul></div>
+    </section>
 
-    <div id="ba-check-mode" hidden>
-      <section>
-        <h2>B. Additions [L]</h2>
-        <div class="grid2" id="ba-additions"></div>
-      </section>
-      <div class="errors" id="baErrors" role="alert" hidden><ul id="baErrorList"></ul></div>
-      <div id="baResults" hidden>
+    <div id="tmResults" hidden>
+      <div class="errors" id="tmBlocked" hidden></div>
+      <div id="tmOk">
+        <div class="tiles">
+          <div class="tile"><div class="tile-label">From Tank 1</div><div class="tile-value" id="tm-out1"></div><div class="tile-sub" id="tm-out1n"></div></div>
+          <div class="tile"><div class="tile-label">From Tank 2</div><div class="tile-value" id="tm-out2"></div><div class="tile-sub" id="tm-out2n"></div></div>
+          <div class="tile tile-total"><div class="tile-label">Tank 3 total</div><div class="tile-value" id="tm-out3"></div><div class="tile-sub">after mixing</div></div>
+        </div>
         <section>
-          <h2>C. Before / Addition / After / Target</h2>
-          <div class="table-wrap"><table>
-            <thead><tr><th>Parameter</th><th class="num">Before</th><th class="num">Change</th><th class="num">After</th><th class="num">Optimum</th><th>Status</th></tr></thead>
-            <tbody id="baTable"></tbody>
-          </table></div>
-          <div id="baGuidance"></div>
-          <p class="note" id="baTankWarn" style="margin-top:12px"></p>
+          <h2>Predicted Tank 3</h2>
+          <div class="chips" id="tm-pred"></div>
+          <div id="tmGuidance"></div>
+          <p class="note" id="tmTankWarn" style="margin-top:12px"></p>
+          <details style="margin-top:10px"><summary>Show calculation</summary><pre id="tmCalc"></pre></details>
         </section>
-        <section><h2>D. Calculation details</h2><details><summary>Show calculation</summary><pre id="baCalc"></pre></details></section>
       </div>
     </div>
   </div>

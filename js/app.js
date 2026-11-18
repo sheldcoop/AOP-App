@@ -73,7 +73,7 @@ function guidanceHtml(pred) {
   return items.length ? '<div class="errors" style="margin-top:12px"><strong>Workbook guidance</strong><ul>' + items.join("") + "</ul></div>" : "";
 }
 
-// AP-3006 Bath Adjustment UI
+// AP-3006 Bath Adjustment UI — three-tank mix
 (function () {
   var CFG = window.CHEMISTRY_CONFIG.AP3006_BATH_ADJUSTMENT;
   var BA = window.AP3006BathAdjustment;
@@ -81,117 +81,78 @@ function guidanceHtml(pred) {
   var $ = function (id) { return document.getElementById(id); };
   var f = function (x) { return x.toFixed(D.valueDecimals); };
   var fl = function (x) { return x.toFixed(D.volumeDecimals); };
-  var n6 = function (x) { return x.toFixed(6); };
-  var curKeys = ["currentVolume", "ee", "acc", "cu"];
+  var n6 = function (x) { return +x.toFixed(6); };
 
-  $("ba-premixHint").textContent = "Needed only for the make-up premix option. The premix is made with the Make-Up recipe (documented range " + CFG.premixCuMinMgPerL + "–" + CFG.premixCuMaxMgPerL + " mg/L).";
-  $("ba-targetCu").value = String(CFG.defaultTargetCuMgPerL);
-  $("ba-targetHint").textContent = "Optimum " + CFG.optimum.cu.target + " ± " + CFG.optimum.cu.tol + " mg/L · control limit " + CFG.control.cu.min + "–" + CFG.control.cu.max + " mg/L";
-  $("btTankWarn").textContent = CFG.tankWarning;
-  $("baTankWarn").textContent = CFG.tankWarning;
-  CFG.solutions.forEach(function (s) {
-    var d = document.createElement("div");
-    d.innerHTML = '<label for="ba-add-' + s.key + '">' + s.name + ' [L]</label><input id="ba-add-' + s.key + '" inputmode="decimal" autocomplete="off" value="0">';
-    $("ba-additions").appendChild(d);
-  });
+  var opts = CFG.solutions.map(function (s) { return '<option value="' + s.key + '">' + s.name + "</option>"; }).join("");
+  $("tm-tank1").innerHTML = opts; $("tm-tank2").innerHTML = opts;
+  $("tm-tank1").value = "rp"; $("tm-tank2").value = "di";
+  $("tm-targetCu").value = String(CFG.defaultTargetCuMgPerL);
+  $("tm-targetHint").textContent = "Optimum " + CFG.optimum.cu.target + " ± " + CFG.optimum.cu.tol + " mg/L";
+  $("tm-premixHint").textContent = "Made with the Make-Up recipe (" + CFG.premixCuMinMgPerL + "–" + CFG.premixCuMaxMgPerL + " mg/L).";
+  $("tmTankWarn").textContent = CFG.tankWarning;
 
-  [["ba-mode-target", "ba-target-mode"], ["ba-mode-check", "ba-check-mode"]].forEach(function (t, _, all) {
-    $(t[0]).addEventListener("click", function () {
-      all.forEach(function (u) { $(u[0]).setAttribute("aria-selected", u[0] === t[0]); $(u[1]).hidden = u[0] !== t[0]; });
-    });
-  });
+  function tankInfo(key) {
+    var pc = BA.solutionContributions(CFG, Number($("tm-premixCu").value) || null);
+    var s = pc.filter(function (x) { return x.key === key; })[0];
+    if (!s || s.unavailable) return "Enter the premix Cu below.";
+    var comp = Object.keys(s.composition).map(function (k) { return CFG.chemicals[k].name.replace("AP-3006", "") + " " + (+s.composition[k].toFixed(2)) + " %"; }).join(" / ");
+    return comp + " → EE " + (+s.ee.toFixed(2)) + " % · Acc " + (+s.acc.toFixed(2)) + " % · Cu " + (+s.cu.toFixed(2)) + " mg/L";
+  }
 
-  function showErrors(listId, boxId, errors, prefixFor) {
-    var list = $(listId); list.innerHTML = "";
-    errors.forEach(function (e) {
-      var li = document.createElement("li"); li.textContent = e.message; list.appendChild(li);
-      var el = $(prefixFor(e.field)); if (el) el.setAttribute("aria-invalid", "true");
-    });
-    $(boxId).hidden = false;
-  }
-  function clearInvalid() {
-    Array.prototype.forEach.call(document.querySelectorAll("#panel-ap-ba input"), function (i) { i.removeAttribute("aria-invalid"); });
-  }
-  function current() {
-    var o = {}; curKeys.forEach(function (k) { o[k] = $("ba-" + k).value; });
-    o.premixCu = $("ba-premixCu").value; return o;
-  }
-  function contribLine(s) {
-    var comp = Object.keys(s.composition).map(function (k) { return CFG.chemicals[k].name + " " + (+s.composition[k].toFixed(4)) + " %"; }).join(" + ");
-    return s.name + ": " + comp + " → EE " + (+s.ee.toFixed(4)) + " %, Acc " + (+s.acc.toFixed(4)) + " %, Cu " + (+s.cu.toFixed(4)) + " mg/L";
-  }
-  function predRows(p) {
-    return [["ee", "Effective Element [%]"], ["acc", "Accelerator [%]"], ["cu", "Cu [mg/L]"]].map(function (q) {
+  function render() {
+    var t1 = $("tm-tank1").value, t2 = $("tm-tank2").value;
+    $("tm-premixRow").hidden = !(t1 === "mu" || t2 === "mu");
+    var cv = Number($("tm-currentVolume").value);
+    $("tm-bathFields").hidden = !(cv > 0);
+    $("tm-info1").textContent = tankInfo(t1); $("tm-info2").textContent = tankInfo(t2);
+    Array.prototype.forEach.call(document.querySelectorAll("#panel-ap-ba input, #panel-ap-ba select"), function (i) { i.removeAttribute("aria-invalid"); });
+
+    var inp = { tank1: t1, tank2: t2 };
+    ["currentVolume", "ee", "acc", "cu", "finalVolume", "targetCu", "premixCu"].forEach(function (k) { inp[k] = $("tm-" + k).value; });
+    var r = BA.calculateTankMix(inp, CFG);
+    if (!r.ok) {
+      $("tmResults").hidden = true;
+      $("tmErrorList").innerHTML = "";
+      r.errors.forEach(function (e) {
+        var li = document.createElement("li"); li.textContent = e.message; $("tmErrorList").appendChild(li);
+        if ($("tm-" + e.field)) $("tm-" + e.field).setAttribute("aria-invalid", "true");
+      });
+      $("tmErrors").hidden = false;
+      return;
+    }
+    $("tmErrors").hidden = true; $("tmResults").hidden = false;
+    $("tmBlocked").hidden = r.feasible; $("tmOk").hidden = !r.feasible;
+    if (!r.feasible) { $("tmBlocked").textContent = r.message; return; }
+
+    $("tm-out1").textContent = fl(r.x1) + " L"; $("tm-out1n").textContent = r.tank1.name;
+    $("tm-out2").textContent = fl(r.x2) + " L"; $("tm-out2n").textContent = r.tank2.name;
+    $("tm-out3").textContent = fl(r.prediction.volume.after) + " L";
+    var p = r.prediction;
+    $("tm-pred").innerHTML = [["ee", "Effective Element", "%"], ["acc", "Accelerator", "%"], ["cu", "Cu", "mg/L"]].map(function (q) {
       var x = p.params[q[0]];
-      return "<tr><td>" + q[1] + '</td><td class="num">' + f(x.before) + '</td><td class="num">' + f(x.after) + "</td><td>" + statusHtml(x.status) + "</td></tr>";
+      return '<div class="chip"><div class="chip-name">' + q[1] + '</div><div class="chip-val">' + f(x.after) + " " + q[2] + "</div>" + statusHtml(x.status) + "</div>";
     }).join("");
+    $("tmGuidance").innerHTML = guidanceHtml(p);
+
+    var v = r.inputs, A = v.finalVolume - v.currentVolume;
+    $("tmCalc").textContent = [
+      "Tank 1: " + r.tank1.name + " — EE " + n6(r.tank1.ee) + " %, Acc " + n6(r.tank1.acc) + " %, Cu " + n6(r.tank1.cu) + " mg/L",
+      "Tank 2: " + r.tank2.name + " — EE " + n6(r.tank2.ee) + " %, Acc " + n6(r.tank2.acc) + " %, Cu " + n6(r.tank2.cu) + " mg/L",
+      "(solution values from workbook M15 constants: M1 EE 200 / Acc 200; M2 Cu 240; R EE 200 / Acc 165)",
+      "",
+      "Volume to add:  T1 + T2 = " + v.finalVolume + " − " + v.currentVolume + " = " + n6(A) + " L",
+      "Cu balance:     " + n6(r.tank1.cu) + "·T1 + " + n6(r.tank2.cu) + "·T2 = " + v.targetCu + " × " + v.finalVolume + " − " + v.cu + " × " + v.currentVolume,
+      "→ T1 = " + n6(r.x1) + " L,  T2 = " + n6(r.x2) + " L",
+      "",
+      "Predicted: Final_X = (X_now × V_now + X_T1 × T1 + X_T2 × T2) / V_final",
+      "  EE " + n6(p.params.ee.after) + " %, Accelerator " + n6(p.params.acc.after) + " %, Cu " + n6(p.params.cu.after) + " mg/L"
+    ].join("\n");
   }
 
-  function renderTarget() {
-    clearInvalid();
-    var inp = current(); inp.targetCu = $("ba-targetCu").value;
-    var r = BA.calculateForTargetCu(inp, CFG);
-    if (!r.ok) {
-      $("btResults").hidden = true;
-      showErrors("btErrorList", "btErrors", r.errors, function (k) { return "ba-" + k; });
-      return;
-    }
-    $("btErrors").hidden = true; $("btResults").hidden = false;
-    $("btDirection").textContent = r.direction === "none" ? "Cu is already at the target — no addition needed." :
-      "Measured Cu " + f(r.inputs.cu) + " mg/L → target " + f(r.inputs.targetCu) + " mg/L: Cu must be " + (r.direction === "lower" ? "lowered." : "raised.");
-    $("btOptions").innerHTML = r.direction === "none" ? "" : r.options.map(function (o) {
-      if (!o.feasible) return '<div class="pending" style="margin-bottom:10px"><strong>' + o.name + "</strong> — not possible. " + o.reason + "</div>";
-      var p = o.prediction;
-      return '<div style="border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">' +
-        '<div style="font-size:1.1rem"><strong>' + o.name + ': add ' + fl(o.litres) + " L</strong> → volume " + fl(p.volume.after) + " L</div>" +
-        '<div class="table-wrap"><table style="margin-top:6px"><thead><tr><th>Predicted</th><th class="num">Before</th><th class="num">After</th><th>Status</th></tr></thead><tbody>' +
-        predRows(p) + "</tbody></table></div>" + guidanceHtml(p) + "</div>";
-    }).join("");
-    var L = ["Configuration " + r.configVersion + " — contributions from workbook M15 single-chemical constants:"];
-    r.options.forEach(function (o) {
-      if (o.contribution) L.push("  " + contribLine({ name: o.name, composition: o.composition, ee: o.contribution.ee, acc: o.contribution.acc, cu: o.contribution.cu }));
-    });
-    L.push("", "Amount of solution s = V × (Target Cu − Cu) / (Cu_s − Target Cu)");
-    r.options.forEach(function (o) {
-      if (o.feasible) L.push("  " + o.name + " = " + r.inputs.currentVolume + " × (" + r.inputs.targetCu + " − " + r.inputs.cu + ") / (" + (+o.contribution.cu.toFixed(6)) + " − " + r.inputs.targetCu + ") = " + n6(o.litres) + " L");
-    });
-    L.push("", "Prediction: Final_X = (X × V + contribution_X × addition) / (V + addition)");
-    $("btCalc").textContent = L.join("\n");
-  }
-
-  function renderCheck() {
-    clearInvalid();
-    var inp = current(); inp.additions = {};
-    CFG.solutions.forEach(function (s) { inp.additions[s.key] = $("ba-add-" + s.key).value; });
-    var r = BA.calculateBathAdjustment(inp, CFG);
-    if (!r.ok) {
-      $("baResults").hidden = true;
-      showErrors("baErrorList", "baErrors", r.errors, function (k) { return curKeys.indexOf(k) >= 0 || k === "premixCu" ? "ba-" + k : "ba-add-" + k; });
-      return;
-    }
-    $("baErrors").hidden = true; $("baResults").hidden = false;
-    var sgn = function (x, d) { return (x >= 0 ? "+" : "") + x.toFixed(d); };
-    var rows = ['<tr><td>Volume [L]</td><td class="num">' + fl(r.volume.before) + '</td><td class="num">' + sgn(r.volume.added, D.volumeDecimals) + '</td><td class="num">' + fl(r.volume.after) + '</td><td class="num">—</td><td></td></tr>'];
-    [["ee", "Effective Element [%]"], ["acc", "Accelerator [%]"], ["cu", "Cu [mg/L]"]].forEach(function (q) {
-      var x = r.params[q[0]], o = x.optimum;
-      rows.push("<tr><td>" + q[1] + '</td><td class="num">' + f(x.before) + '</td><td class="num">' + sgn(x.change, D.valueDecimals) + '</td><td class="num">' + f(x.after) + '</td><td class="num">' + o.target + " ± " + o.tol + "</td><td>" + statusHtml(x.status) + "</td></tr>");
-    });
-    $("baTable").innerHTML = rows.join("");
-    $("baGuidance").innerHTML = guidanceHtml(r);
-    var L = ["Configuration " + r.configVersion + " — solution contributions:"];
-    r.solutions.forEach(function (s) { L.push("  " + contribLine(s)); });
-    L.push("", "Final Volume = " + r.volume.before + " + " + r.volume.added + " = " + n6(r.volume.after) + " L");
-    [["ee", "EE"], ["acc", "Accelerator"], ["cu", "Cu"]].forEach(function (q) {
-      var terms = r.solutions.filter(function (s) { return r.additions[s.key] > 0 && s[q[0]] !== 0; })
-        .map(function (s) { return (+s[q[0]].toFixed(6)) + " × " + r.additions[s.key]; });
-      L.push("Final " + q[1] + " = (" + r.params[q[0]].before + " × " + r.volume.before + (terms.length ? " + " + terms.join(" + ") : "") + ") / " + n6(r.volume.after) + " = " + n6(r.params[q[0]].after));
-    });
-    $("baCalc").textContent = L.join("\n");
-  }
-
-  function renderAll() { renderTarget(); renderCheck(); }
-  Array.prototype.forEach.call(document.querySelectorAll("#panel-ap-ba input"), function (i) { i.addEventListener("input", renderAll); });
-  renderAll();
+  Array.prototype.forEach.call(document.querySelectorAll("#panel-ap-ba input, #panel-ap-ba select"), function (i) {
+    i.addEventListener("input", render); i.addEventListener("change", render);
+  });
+  render();
 })();
 
 // Generic Make-Up / Replenishment panels (HCl Pretreatment, CZ-8401, Acid Rinse)
